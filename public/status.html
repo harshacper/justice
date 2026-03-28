@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Status - JusticeLine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <i class="fa-solid fa-scale-balanced fa-2x"></i>
+            <h1>JusticeLine</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="submit.html">New Complaint</a></li>
+                <li><a href="#" onclick="logout()">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container" style="align-items: flex-start; margin-top: 2rem;">
+        <div class="glass-card large" style="width: 100%;">
+            <h2>My Complaints Status</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Complaint ID</th>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userComplaintsBody">
+                        <!-- Loaded dynamically -->
+                        <tr><td colspan="6" class="text-center">Loading complaints...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="submit.html" class="btn"><i class="fa-solid fa-plus"></i> File Another Complaint</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = localStorage.getItem('userId');
+            if(!userId) {
+                window.location.href = 'login.html';
+            } else {
+                fetchUserComplaints(userId);
+            }
+        });
+
+        async function fetchUserComplaints(userId) {
+            try {
+                const response = await fetch(`/api/complaints/user/${userId}`);
+                const data = await response.json();
+                const tbody = document.getElementById('userComplaintsBody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No complaints filed yet.</td></tr>';
+                    return;
+                }
+
+                data.forEach(comp => {
+                    let badgeClass = 'pending';
+                    if (comp.Status === 'In Progress') badgeClass = 'progress';
+                    if (comp.Status === 'Resolved') badgeClass = 'resolved';
+
+                    const row = `
+                        <tr>
+                            <td>#${String(comp.ComplaintID).padStart(4, '0')}</td>
+                            <td>${new Date(comp.Timestamp).toLocaleDateString()}</td>
+                            <td>${comp.Category}</td>
+                            <td>${comp.Title}</td>
+                            <td>${comp.Priority}</td>
+                            <td><span class="badge ${badgeClass}">${comp.Status}</span></td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (err) {
+                console.error(err);
+                document.getElementById('userComplaintsBody').innerHTML = '<tr><td colspan="6" class="text-center">Failed to load internal data.</td></tr>';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userName');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

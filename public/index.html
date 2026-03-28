@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JusticeLine - Online Complaint Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <i class="fa-solid fa-scale-balanced fa-2x"></i>
+            <h1>JusticeLine</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="admin.html">Admin</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container hero">
+        <div>
+            <h1>Justice for All, Anytime.</h1>
+            <p>A secure, anonymous, and efficient way to report grievances and illegal activities directly to authorities.</p>
+
+            <div class="features">
+                <div class="feature-col">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h3>Secure & Anonymous</h3>
+                    <p style="font-size: 0.9rem; margin-top: 10px;">Your identity and data are protected with high-grade encryption.</p>
+                </div>
+                <div class="feature-col">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <h3>Smart Location</h3>
+                    <p style="font-size: 0.9rem; margin-top: 10px;">Automated GPS tracking to precisely log incident areas.</p>
+                </div>
+                <div class="feature-col">
+                    <i class="fa-solid fa-gavel"></i>
+                    <h3>Direct Action</h3>
+                    <p style="font-size: 0.9rem; margin-top: 10px;">Connect instantly with law enforcement and authoritative bodies.</p>
+                </div>
+            </div>
+
+            <!-- Submit button placed at the bottom of the home content as requested -->
+            <a href="submit.html" class="btn" style="font-size: 1.25rem; padding: 15px 40px; border-radius: 50px; width: auto; margin-top: 2rem;">
+                <i class="fa-solid fa-bullhorn" style="margin-right: 10px;"></i>
+                Submit Complaint
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 JusticeLine Complaint Management System. Secure & Confidential.</p>
+    </footer>
+
+    <!-- Emergency SOS Button -->
+    <div class="sos-btn" id="sosBtn" onclick="triggerSOS()">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>EMERGENCY SOS</span>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        async function triggerSOS() {
+            if(confirm("ALERT: Are you sure you want to send an emergency signal to authorities (Email & SMS will be dispatched)?")) {
+                const userName = prompt("Enter your name (optional):", "Anonymous");
+                const userPhone = prompt("Enter your phone number (optional):", "");
+                const details = prompt("Briefly describe the emergency:", "Urgent help needed!");
+                
+                let locationStr = "Location not provided";
+                // Try to get location
+                if(navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        locationStr = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}`;
+                        sendHelpRequest(userName, userPhone, locationStr, details);
+                    }, () => {
+                        sendHelpRequest(userName, userPhone, locationStr, details);
+                    });
+                } else {
+                    sendHelpRequest(userName, userPhone, locationStr, details);
+                }
+            }
+        }
+
+        async function sendHelpRequest(name, phone, loc, msg) {
+            document.getElementById('sosBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>SENDING...</span>';
+            try {
+                const res = await fetch('/api/help', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone, location: loc, message: msg })
+                });
+                const data = await res.json();
+                alert(data.message);
+            } catch(e) {
+                alert("Error sending SOS. Please call 911 directly.");
+            } finally {
+                document.getElementById('sosBtn').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>EMERGENCY SOS</span>';
+            }
+        }
+    </script>
+</body>
+</html>

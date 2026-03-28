@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Complaint - JusticeLine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <i class="fa-solid fa-scale-balanced fa-2x"></i>
+            <h1>JusticeLine</h1>
+        </div>
+        <nav>
+            <ul id="userNav">
+                <!-- Injected via JS -->
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="glass-card large">
+            <h2>File a New Complaint</h2>
+            <form id="complaintForm" enctype="multipart/form-data">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Complaint Title</label>
+                        <input type="text" id="compTitle" class="form-control" required placeholder="Brief title...">
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Incident</label>
+                        <input type="date" id="compDate" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Detailed Description</label>
+                        <textarea id="compDesc" class="form-control" rows="4" required placeholder="Describe the incident in detail..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="compCategory" class="form-control" required>
+                            <option value="">Select Category</option>
+                            <option value="Theft">Theft / Burglary</option>
+                            <option value="Fraud">Cybercrime / Fraud</option>
+                            <option value="Assault">Assault / Harassment</option>
+                            <option value="Corruption">Corruption / Bribery</option>
+                            <option value="Other">Other Civil Matters</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Priority / Severity</label>
+                        <select id="compPriority" class="form-control" required>
+                            <option value="Low">Low - Informational</option>
+                            <option value="Medium" selected>Medium - Needs Attention</option>
+                            <option value="High">High - Urgent / Emergency</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Evidence (Upload Image or Capture Camera)</label>
+                        <!-- Using capture="environment" to prompt mobile cameras -->
+                        <input type="file" id="compImage" accept="image/*" class="form-control" capture="environment">
+                        <small style="color: #ccc;">Max 5MB. Clear photos only.</small>
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>GPS Location Accuracy</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="compLocation" class="form-control" readonly placeholder="Waiting for GPS..." style="background: rgba(255,255,255,0.05); color: #ddd;">
+                            <button type="button" id="btnGetLocation" class="btn secondary" style="width: auto;">
+                                <i class="fa-solid fa-location-crosshairs"></i> Fetch GPS
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
+                    <a href="status.html" class="btn secondary" style="width: auto;">Cancel / View Status</a>
+                    <button type="button" id="btnSubmitConfirm" class="btn" style="width: auto; padding: 10px 40px;">Review & Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3>Confirm Submission</h3>
+            <p>Are you sure you want to submit this complaint?</p>
+            <p style="font-size: 0.85rem; color: #aaa; margin-top: 10px;">Please ensure all details and evidence are accurate.</p>
+            <div class="modal-actions">
+                <button type="button" class="btn secondary" onclick="document.getElementById('confirmModal').style.display='none'">Cancel</button>
+                <button type="button" class="btn" id="btnFinalSubmit">Yes, Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="border-color: #38a169;">
+            <i class="fa-solid fa-circle-check fa-3x" style="color: #38a169; margin-bottom: 1rem;"></i>
+            <h3 style="color: #38a169;">Complaint Submitted Successfully</h3>
+            <p>Your Complaint ID has been recorded securely.</p>
+            <div class="modal-actions">
+                <a href="status.html" class="btn">View My Complaints</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Check if user is logged in before rendering page interaction
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!localStorage.getItem('userId')) {
+                window.location.href = 'login.html';
+            }
+            
+            // Auto fetch location securely on load
+            fetchLocation();
+        });
+
+        // Location Logic
+        document.getElementById('btnGetLocation').addEventListener('click', fetchLocation);
+
+        function fetchLocation() {
+            const locInput = document.getElementById('compLocation');
+            locInput.value = "Requesting permission...";
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        locInput.value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                    },
+                    (error) => {
+                        locInput.value = "GPS Permission Denied / Error";
+                    }
+                );
+            } else {
+                locInput.value = "Geolocation not supported";
+            }
+        }
+
+        // Logic handled in main.js, this just shows confirmation
+        document.getElementById('btnSubmitConfirm').addEventListener('click', () => {
+            if (document.getElementById('complaintForm').checkValidity()) {
+                document.getElementById('confirmModal').style.display = 'flex';
+            } else {
+                document.getElementById('complaintForm').reportValidity();
+            }
+        });
+    </script>
+</body>
+</html>
