@@ -12,11 +12,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 <li><a href="index.html">Home</a></li>
                 <li><a href="submit.html">New Complaint</a></li>
                 <li><a href="status.html">My Status</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="how-it-works.html">How It Works</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="contact.html">Contact</a></li>
                 <li><a href="#" onclick="logout()">Logout</a></li>
             `;
         } else {
             userNav.innerHTML = `
                 <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="how-it-works.html">How It Works</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="contact.html">Contact</a></li>
                 <li><a href="login.html">Login</a></li>
                 <li><a href="register.html">Register</a></li>
                 <li><a href="admin.html">Admin</a></li>

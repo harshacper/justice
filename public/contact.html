@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - JusticeLine</title>
+    <meta name="description" content="Contact JusticeLine support team for help with your complaints or account issues.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .page-hero { text-align: center; padding: 4rem 2rem 2rem; color: white; }
+        .page-hero h1 { font-size: 2.8rem; color: var(--accent-color); margin-bottom: 1rem; }
+        .page-hero p { font-size: 1.15rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
+
+        .contact-wrap { max-width: 1100px; margin: 3rem auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1.3fr; gap: 2rem; }
+
+        /* Info Panel */
+        .contact-info { display: flex; flex-direction: column; gap: 1.2rem; }
+        .info-block { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.8rem; color: white; display: flex; gap: 1.2rem; align-items: flex-start; transition: transform 0.3s; }
+        .info-block:hover { transform: translateY(-4px); }
+        .info-icon { width: 50px; height: 50px; min-width: 50px; border-radius: 12px; background: rgba(214,158,46,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--accent-color); }
+        .info-text h3 { margin-bottom: 0.4rem; font-size: 1rem; }
+        .info-text a { color: var(--accent-color); text-decoration: none; font-weight: 600; }
+        .info-text a:hover { text-decoration: underline; }
+        .info-text p { font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.5; }
+
+        .availability { background: linear-gradient(135deg, rgba(214,158,46,0.12), rgba(26,54,93,0.2)); border: 1px solid rgba(214,158,46,0.25); border-radius: 16px; padding: 1.8rem; color: white; }
+        .availability h3 { color: var(--accent-color); margin-bottom: 1rem; }
+        .avail-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.9rem; }
+        .avail-row:last-child { border-bottom: none; }
+        .avail-row span.green { color: #38a169; font-weight: 600; }
+        .emergency-num { margin-top: 1rem; padding: 1rem; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 10px; text-align: center; color: white; }
+        .emergency-num strong { color: #fc8181; font-size: 1.3rem; }
+
+        /* Form Panel */
+        .contact-form-card { background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 2.5rem; backdrop-filter: blur(20px); color: white; }
+        .contact-form-card h2 { color: var(--accent-color); margin-bottom: 1.8rem; font-size: 1.5rem; text-align: center; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.85); }
+        .form-control { width: 100%; padding: 11px 15px; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; background: rgba(255,255,255,0.08); color: white; font-size: 0.95rem; outline: none; transition: all 0.3s; font-family: inherit; }
+        .form-control::placeholder { color: rgba(255,255,255,0.4); }
+        .form-control:focus { border-color: var(--accent-color); background: rgba(255,255,255,0.12); }
+        textarea.form-control { resize: vertical; min-height: 130px; }
+        select.form-control option { background: #1a365d; }
+        .submit-btn { width: 100%; padding: 14px; background: var(--accent-color); color: #1a365d; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.3s; margin-top: 0.5rem; }
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(214,158,46,0.4); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        #contactMsg { text-align: center; margin-top: 1rem; font-size: 0.95rem; min-height: 24px; }
+
+        @media (max-width: 768px) {
+            .contact-wrap { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <i class="fa-solid fa-scale-balanced fa-2x"></i>
+            <h1>JusticeLine</h1>
+        </div>
+        <nav><ul id="userNav"></ul></nav>
+    </header>
+
+    <div class="page-hero">
+        <h1><i class="fa-solid fa-headset"></i> Contact & Support</h1>
+        <p>Our team is here to assist you. Reach out for technical help, complaint queries, or general guidance.</p>
+    </div>
+
+    <div class="contact-wrap">
+
+        <!-- Info Panel -->
+        <div class="contact-info">
+
+            <div class="info-block">
+                <div class="info-icon"><i class="fa-solid fa-envelope"></i></div>
+                <div class="info-text">
+                    <h3>Email Support</h3>
+                    <a href="mailto:harshasubhaash123@gmail.com">harshasubhaash123@gmail.com</a>
+                    <p>Send us your queries, complaint references, or account issues.</p>
+                </div>
+            </div>
+
+            <div class="info-block">
+                <div class="info-icon"><i class="fa-solid fa-phone"></i></div>
+                <div class="info-text">
+                    <h3>Phone / WhatsApp</h3>
+                    <a href="tel:+919380268436">+91 93802 68436</a>
+                    <p>Call or message us for urgent support during working hours.</p>
+                </div>
+            </div>
+
+            <div class="info-block">
+                <div class="info-icon"><i class="fa-brands fa-github"></i></div>
+                <div class="info-text">
+                    <h3>Source Code</h3>
+                    <a href="https://github.com/harshacper/justice.git" target="_blank">github.com/harshacper/justice</a>
+                    <p>View the open-source codebase, report bugs, or contribute.</p>
+                </div>
+            </div>
+
+            <div class="availability">
+                <h3><i class="fa-solid fa-clock"></i> Support Hours</h3>
+                <div class="avail-row"><span>Monday – Friday</span><span class="green">9:00 AM – 6:00 PM IST</span></div>
+                <div class="avail-row"><span>Saturday</span><span class="green">10:00 AM – 2:00 PM IST</span></div>
+                <div class="avail-row"><span>Sunday</span><span style="color: #fc8181;">Closed (Email only)</span></div>
+                <div class="avail-row"><span>Emergency SOS</span><span class="green">24 / 7 Always On</span></div>
+                <div class="emergency-num">
+                    <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">For life-threatening emergencies:</p>
+                    <strong>Call 112 immediately</strong>
+                </div>
+            </div>
+
+        </div><!-- /info panel -->
+
+        <!-- Contact Form -->
+        <div class="contact-form-card">
+            <h2><i class="fa-solid fa-paper-plane"></i> Send Us a Message</h2>
+            <form id="contactForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Your Full Name *</label>
+                        <input type="text" id="ctName" class="form-control" placeholder="Enter your name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="ctPhone" class="form-control" placeholder="+91 XXXXX XXXXX">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" id="ctEmail" class="form-control" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Subject *</label>
+                    <select id="ctSubject" class="form-control" required>
+                        <option value="">Select a subject...</option>
+                        <option>Account Issue / Login Problem</option>
+                        <option>Complaint Status Query</option>
+                        <option>Technical Bug / Error Report</option>
+                        <option>Request for Complaint Review</option>
+                        <option>Data Privacy Concern</option>
+                        <option>General Enquiry</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Complaint Reference ID (optional)</label>
+                    <input type="text" id="ctRefId" class="form-control" placeholder="e.g. #0042">
+                </div>
+                <div class="form-group">
+                    <label>Message *</label>
+                    <textarea id="ctMessage" class="form-control" placeholder="Describe your issue or query in detail..." required></textarea>
+                </div>
+                <button type="submit" class="submit-btn" id="ctSubmitBtn">
+                    <i class="fa-solid fa-paper-plane"></i> Send Message to Support
+                </button>
+                <div id="contactMsg"></div>
+            </form>
+        </div>
+
+    </div><!-- /contact-wrap -->
+
+    <footer>
+        <p>&copy; 2026 JusticeLine Complaint Management System. Secure & Confidential. &nbsp;|&nbsp;
+        <a href="about.html" style="color: var(--accent-color);">About</a> &nbsp;|&nbsp;
+        <a href="how-it-works.html" style="color: var(--accent-color);">How It Works</a> &nbsp;|&nbsp;
+        <a href="faq.html" style="color: var(--accent-color);">FAQ</a> &nbsp;|&nbsp;
+        <a href="contact.html" style="color: var(--accent-color);">Contact</a></p>
+    </footer>
+
+    <div class="sos-btn" id="sosBtn" onclick="triggerSOS()">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>EMERGENCY SOS</span>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('ctSubmitBtn');
+            const msgEl = document.getElementById('contactMsg');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+            msgEl.textContent = '';
+
+            const name = document.getElementById('ctName').value;
+            const phone = document.getElementById('ctPhone').value;
+            const email = document.getElementById('ctEmail').value;
+            const subject = document.getElementById('ctSubject').value;
+            const refId = document.getElementById('ctRefId').value;
+            const message = document.getElementById('ctMessage').value;
+
+            const fullMsg = `SUPPORT REQUEST\nFrom: ${name} (${email})\nPhone: ${phone || 'Not provided'}\nSubject: ${subject}\nReference ID: ${refId || 'N/A'}\n\nMessage:\n${message}`;
+
+            try {
+                const res = await fetch('/api/help', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone, location: 'Support Form', message: fullMsg })
+                });
+                const data = await res.json();
+                msgEl.style.color = '#38a169';
+                msgEl.innerHTML = '<i class="fa-solid fa-check-circle"></i> Message sent successfully! Our team will respond within 24 hours.';
+                document.getElementById('contactForm').reset();
+            } catch(err) {
+                msgEl.style.color = '#e53e3e';
+                msgEl.innerHTML = '<i class="fa-solid fa-exclamation-circle"></i> Failed to send. Please email us directly at harshasubhaash123@gmail.com';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Message to Support';
+            }
+        });
+
+        async function triggerSOS() {
+            if(confirm("ALERT: Are you sure you want to send an emergency signal to authorities?")) {
+                const userName = prompt("Enter your name (optional):", "Anonymous");
+                const userPhone = prompt("Enter your phone number (optional):", "");
+                const details = prompt("Briefly describe the emergency:", "Urgent help needed!");
+                let locationStr = "Location not provided";
+                if(navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        locationStr = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}`;
+                        sendHelpRequest(userName, userPhone, locationStr, details);
+                    }, () => sendHelpRequest(userName, userPhone, locationStr, details));
+                } else sendHelpRequest(userName, userPhone, locationStr, details);
+            }
+        }
+        async function sendHelpRequest(name, phone, loc, msg) {
+            document.getElementById('sosBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>SENDING...</span>';
+            try {
+                const res = await fetch('/api/help', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name, phone, location: loc, message: msg}) });
+                const data = await res.json();
+                alert(data.message);
+            } catch(e) { alert("Error sending SOS. Please call 112 directly."); }
+            finally { document.getElementById('sosBtn').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>EMERGENCY SOS</span>'; }
+        }
+    </script>
+</body>
+</html>

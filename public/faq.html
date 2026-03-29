@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - JusticeLine</title>
+    <meta name="description" content="Frequently asked questions about using JusticeLine complaint management system.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .page-hero { text-align: center; padding: 4rem 2rem 2rem; color: white; }
+        .page-hero h1 { font-size: 2.8rem; color: var(--accent-color); margin-bottom: 1rem; }
+        .page-hero p { font-size: 1.15rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
+
+        .faq-wrap { max-width: 850px; margin: 3rem auto; padding: 0 2rem; }
+        .faq-category { margin-bottom: 3rem; }
+        .faq-category h2 { font-size: 1.3rem; color: var(--accent-color); margin-bottom: 1.2rem; border-bottom: 1px solid rgba(214,158,46,0.3); padding-bottom: 0.5rem; }
+
+        .faq-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin-bottom: 0.8rem; overflow: hidden; transition: border-color 0.3s; }
+        .faq-item.open { border-color: rgba(214,158,46,0.4); }
+        .faq-question { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; cursor: pointer; color: white; font-weight: 500; font-size: 1rem; gap: 1rem; }
+        .faq-question:hover { background: rgba(255,255,255,0.04); }
+        .faq-question i.toggle { color: var(--accent-color); font-size: 0.9rem; transition: transform 0.3s; min-width: 16px; }
+        .faq-item.open .faq-question i.toggle { transform: rotate(180deg); }
+        .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; }
+        .faq-answer-inner { padding: 0 1.5rem 1.2rem; color: rgba(255,255,255,0.8); font-size: 0.95rem; line-height: 1.8; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1rem; }
+        .faq-item.open .faq-answer { max-height: 400px; }
+
+        .search-box { max-width: 600px; margin: 0 auto 2.5rem; padding: 0 2rem; }
+        .search-input { width: 100%; padding: 14px 20px 14px 50px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: white; font-size: 1rem; outline: none; transition: border-color 0.3s; }
+        .search-input::placeholder { color: rgba(255,255,255,0.5); }
+        .search-input:focus { border-color: var(--accent-color); }
+        .search-wrap { position: relative; }
+        .search-wrap i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.4); }
+
+        .contact-nudge { max-width: 850px; margin: 0 auto 3rem; padding: 0 2rem; }
+        .nudge-box { background: linear-gradient(135deg, rgba(214,158,46,0.1), rgba(26,54,93,0.2)); border: 1px solid rgba(214,158,46,0.25); border-radius: 16px; padding: 2rem; text-align: center; color: white; }
+        .nudge-box p { margin-bottom: 1.2rem; opacity: 0.85; }
+        .btn-outline-sm { display: inline-block; padding: 10px 24px; border: 2px solid var(--accent-color); color: var(--accent-color); border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s; margin: 0 0.5rem; }
+        .btn-outline-sm:hover { background: var(--accent-color); color: #1a365d; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <i class="fa-solid fa-scale-balanced fa-2x"></i>
+            <h1>JusticeLine</h1>
+        </div>
+        <nav><ul id="userNav"></ul></nav>
+    </header>
+
+    <div class="page-hero">
+        <h1><i class="fa-solid fa-circle-question"></i> Frequently Asked Questions</h1>
+        <p>Everything you need to know about JusticeLine. Can't find your answer? Contact us directly.</p>
+    </div>
+
+    <!-- Search -->
+    <div class="search-box">
+        <div class="search-wrap">
+            <i class="fa-solid fa-search"></i>
+            <input type="text" class="search-input" id="faqSearch" placeholder="Search your question...">
+        </div>
+    </div>
+
+    <div class="faq-wrap">
+
+        <!-- General -->
+        <div class="faq-category">
+            <h2><i class="fa-solid fa-info-circle"></i> General Questions</h2>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>What is JusticeLine?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">JusticeLine is a secure, digital Complaint Management System that allows citizens to report grievances, crimes, civic issues, corruption, and other public safety concerns directly to authorities. The platform provides transparency through real-time status tracking and sends instant notifications to administrators.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Is JusticeLine free to use?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Yes, JusticeLine is completely free for all citizens. There are no fees or hidden charges for filing complaints, creating an account, or tracking your complaint status.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Who can use JusticeLine?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Any citizen who creates a registered account can use JusticeLine. You need a valid email address and phone number to register. There are no restrictions based on age, location, or background.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>What types of complaints can I file?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">You can file complaints under the following categories: Crime & Violence, Corruption & Fraud, Civic Issues, Environmental Violations, Traffic & Road Safety, Child & Women Safety, Property Disputes, and Other Emergencies. Visit our "How It Works" page for a full category breakdown.</div></div>
+            </div>
+        </div>
+
+        <!-- Account -->
+        <div class="faq-category">
+            <h2><i class="fa-solid fa-user-circle"></i> Account & Registration</h2>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>How do I create an account?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Click "Register" in the navigation. Fill in your full name, phone number, email address, password, and residential address. Once submitted, you can immediately log in and begin filing complaints.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Is my personal data secure?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Absolutely. Your password is hashed using bcrypt industry-standard encryption — we never store your password in plain text. Your personal data is only visible to you and platform administrators who are responsible for addressing complaints. We do not sell or share your data with third parties.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>What if I forget my password?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Currently, you can contact our support team via the Contact page with your registered email to get assistance with account recovery. A self-service password reset feature is planned for future updates.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Can I have multiple accounts?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Each email address can only be associated with one account. Creating multiple accounts to misuse the platform is a violation of our terms and may result in all associated accounts being suspended.</div></div>
+            </div>
+        </div>
+
+        <!-- Complaints -->
+        <div class="faq-category">
+            <h2><i class="fa-solid fa-file-alt"></i> Filing & Tracking Complaints</h2>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>How long does it take to resolve a complaint?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Resolution time depends on the nature and priority of the complaint. Critical and High priority cases are escalated immediately. Standard civic issues may take 3–14 business days. You can always track the status in real-time via the "My Status" page.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Can I attach photos to my complaint?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Yes. You can attach one image (up to 5MB in size) as photographic evidence when filing a complaint. Supported formats include JPG, PNG, and WEBP. We strongly recommend including evidence as it significantly speeds up the review process.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>What do the complaint statuses mean?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">
+                    <strong style="color: #e53e3e;">Pending</strong> – Your complaint has been filed and is awaiting review by an authority.<br><br>
+                    <strong style="color: #dd6b20;">In Progress</strong> – An authority has reviewed your complaint and action is currently being taken.<br><br>
+                    <strong style="color: #38a169;">Resolved</strong> – Your complaint has been addressed and closed.<br><br>
+                    <strong style="color: #718096;">Rejected</strong> – Your complaint could not be processed (may be a duplicate or outside our jurisdiction).
+                </div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Can I edit a complaint after submitting it?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Currently, complaints cannot be edited after submission to maintain an accurate and unmodified record. If you need to provide additional information, please file a new complaint referencing your original Complaint ID, or contact support.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>What is the difference between priority levels?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">
+                    <strong>Critical</strong> – Life-threatening emergencies: active crime, fire, medical emergency.<br>
+                    <strong>High</strong> – Serious incidents requiring urgent attention within 24 hours.<br>
+                    <strong>Medium</strong> – Important issues needing attention within 1 week (default).<br>
+                    <strong>Low</strong> – Minor inconveniences or suggestions for improvement.
+                </div></div>
+            </div>
+        </div>
+
+        <!-- SOS -->
+        <div class="faq-category">
+            <h2><i class="fa-solid fa-triangle-exclamation"></i> Emergency SOS</h2>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>When should I use the SOS button?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Use the red EMERGENCY SOS button only in genuine life-threatening emergencies where you or someone nearby is in immediate danger. This triggers an instant alert via email to authorities AND logs the alert to the admin phone (9380268436). For non-urgent matters, please use the standard complaint form.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Does SOS require me to be logged in?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">No. The SOS button is available on all pages and does not require a login. Anyone can trigger it by clicking the red button on any page of the website. You will be asked to optionally provide your name, phone, and emergency details.</div></div>
+            </div>
+        </div>
+
+        <!-- Admin -->
+        <div class="faq-category">
+            <h2><i class="fa-solid fa-user-shield"></i> Admin Panel</h2>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>What are the default admin credentials?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">The default admin username is <strong>admin</strong> and the default password is <strong>admin123</strong>. It is strongly recommended to change these credentials after your first login by contacting the development team.</div></div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>What can admins do on the platform?</span><i class="fa-solid fa-chevron-down toggle"></i>
+                </div>
+                <div class="faq-answer"><div class="faq-answer-inner">Administrators can: view all complaints filed by all users, update the status of any complaint (Pending / In Progress / Resolved / Rejected), view photographic evidence, see GPS location data, view user information (name, phone, email), and delete spam or invalid complaint records. A statistics dashboard with charts is also available.</div></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Not answered? -->
+    <div class="contact-nudge">
+        <div class="nudge-box">
+            <h2 style="color: var(--accent-color); margin-bottom: 1rem;"><i class="fa-solid fa-headset"></i> Still have questions?</h2>
+            <p>Our support team is available to help you with anything not covered here.</p>
+            <a href="contact.html" class="btn-outline-sm"><i class="fa-solid fa-envelope"></i> Contact Support</a>
+            <a href="how-it-works.html" class="btn-outline-sm"><i class="fa-solid fa-list-check"></i> How It Works</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 JusticeLine Complaint Management System. Secure & Confidential. &nbsp;|&nbsp;
+        <a href="about.html" style="color: var(--accent-color);">About</a> &nbsp;|&nbsp;
+        <a href="how-it-works.html" style="color: var(--accent-color);">How It Works</a> &nbsp;|&nbsp;
+        <a href="faq.html" style="color: var(--accent-color);">FAQ</a> &nbsp;|&nbsp;
+        <a href="contact.html" style="color: var(--accent-color);">Contact</a></p>
+    </footer>
+
+    <div class="sos-btn" id="sosBtn" onclick="triggerSOS()">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>EMERGENCY SOS</span>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        function toggleFaq(el) {
+            const item = el.parentElement;
+            const isOpen = item.classList.contains('open');
+            document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+            if (!isOpen) item.classList.add('open');
+        }
+
+        // Search filter
+        document.getElementById('faqSearch').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            document.querySelectorAll('.faq-item').forEach(item => {
+                const text = item.querySelector('.faq-question span').textContent.toLowerCase();
+                const ansText = item.querySelector('.faq-answer-inner').textContent.toLowerCase();
+                item.style.display = (text.includes(query) || ansText.includes(query)) ? '' : 'none';
+            });
+        });
+
+        async function triggerSOS() {
+            if(confirm("ALERT: Are you sure you want to send an emergency signal to authorities?")) {
+                const userName = prompt("Enter your name (optional):", "Anonymous");
+                const userPhone = prompt("Enter your phone number (optional):", "");
+                const details = prompt("Briefly describe the emergency:", "Urgent help needed!");
+                let locationStr = "Location not provided";
+                if(navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        locationStr = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}`;
+                        sendHelpRequest(userName, userPhone, locationStr, details);
+                    }, () => sendHelpRequest(userName, userPhone, locationStr, details));
+                } else sendHelpRequest(userName, userPhone, locationStr, details);
+            }
+        }
+        async function sendHelpRequest(name, phone, loc, msg) {
+            document.getElementById('sosBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>SENDING...</span>';
+            try {
+                const res = await fetch('/api/help', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name, phone, location: loc, message: msg}) });
+                const data = await res.json();
+                alert(data.message);
+            } catch(e) { alert("Error sending SOS. Please call 112 directly."); }
+            finally { document.getElementById('sosBtn').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>EMERGENCY SOS</span>'; }
+        }
+    </script>
+</body>
+</html>
