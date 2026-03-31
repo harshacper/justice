@@ -5,8 +5,18 @@
   <title>Admin Dashboard - JusticeLine</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    .leaflet-container { background: #111 !important; }
+    .leaflet-popup-content-wrapper { background:#1a1a1a!important; border:1px solid rgba(74,222,128,0.3)!important; color:#f0f0f0!important; border-radius:8px!important; }
+    .leaflet-popup-tip { background:#1a1a1a!important; }
+    .leaflet-popup-content { color:#f0f0f0; font-size:0.85rem; line-height:1.5; }
+    #adminComplaintsMap { height: 500px; border-radius: var(--radius); border: 1px solid var(--border-green); }
+    #modalMiniMap { height: 200px; border-radius: var(--radius-sm); border: 1px solid var(--border-green); margin-bottom: 1rem; }
+  </style>
 </head>
 <body>
   <header class="site-header">
@@ -67,6 +77,7 @@
           <a href="#" onclick="showSection('incidents')"><i class="fa-solid fa-file-lines"></i> Incident Reports</a>
           <div class="nav-label">Management</div>
           <a href="#" onclick="showSection('users')"><i class="fa-solid fa-users"></i> Manage Users</a>
+          <a href="#" onclick="showSection('mapview')"><i class="fa-solid fa-map-location-dot"></i> Complaints Map</a>
           <a href="#" onclick="showSection('activity')"><i class="fa-solid fa-clock-rotate-left"></i> Activity Logs</a>
           <div class="nav-label">System</div>
           <a href="index.html"><i class="fa-solid fa-house"></i> Main Website</a>
@@ -150,6 +161,23 @@
           </div>
         </div>
 
+        <!-- MAP VIEW -->
+        <div id="sec-mapview" class="dash-section hidden">
+          <div class="flex items-center justify-between mb-3">
+            <div><h1 style="font-size:1.6rem;margin-bottom:0.2rem;"><i class="fa-solid fa-map-location-dot" style="color:var(--primary)"></i> Complaints Map</h1><p class="text-muted text-sm">All complaint locations plotted on live map. Click a marker for details.</p></div>
+            <button class="btn btn-secondary btn-sm" onclick="loadMapView()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <!-- Legend -->
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+            <span style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--text-secondary);"><span style="width:14px;height:14px;background:#f87171;border-radius:50%;display:inline-block;"></span> Emergency</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--text-secondary);"><span style="width:14px;height:14px;background:#fb923c;border-radius:50%;display:inline-block;"></span> High Priority</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--text-secondary);"><span style="width:14px;height:14px;background:#fbbf24;border-radius:50%;display:inline-block;"></span> Medium/Pending</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--text-secondary);"><span style="width:14px;height:14px;background:#4ade80;border-radius:50%;display:inline-block;"></span> Resolved</span>
+          </div>
+          <div id="adminComplaintsMap"></div>
+          <div id="mapStatus" class="form-hint mt-1 text-center">Loading complaint locations...</div>
+        </div>
+
         <!-- ACTIVITY -->
         <div id="sec-activity" class="dash-section hidden">
           <h1 style="font-size:1.6rem;margin-bottom:1rem;">Activity Logs</h1>
@@ -164,9 +192,12 @@
 
   <!-- UPDATE STATUS MODAL -->
   <div class="modal-overlay" id="statusModal">
-    <div class="modal">
+    <div class="modal" style="max-width:600px;">
       <div class="modal-header"><div class="modal-title"><i class="fa-solid fa-edit"></i> Update Complaint</div><button class="modal-close" onclick="closeModal('statusModal')">✕</button></div>
       <input type="hidden" id="editComplaintId">
+      <!-- Mini Map -->
+      <div id="modalMiniMap" style="display:none;"></div>
+      <div id="modalLocationText" style="font-size:0.82rem;color:var(--primary);margin-bottom:1rem;display:none;"><i class="fa-solid fa-location-dot"></i> <span id="modalLocationSpan"></span></div>
       <div class="form-group"><label>Update Status</label>
         <select id="editStatus" class="form-control">
           <option>Pending</option><option>In Progress</option><option>Resolved</option><option>Rejected</option>
@@ -263,6 +294,12 @@
       if (name === 'emergencies' || name === 'emergency') loadEmergencies();
       if (name === 'users') loadUsers();
       if (name === 'activity') loadActivity();
+      if (name === 'mapview') {
+        setTimeout(() => {
+          loadMapView();
+          if (adminMapInstance) adminMapInstance.invalidateSize();
+        }, 100);
+      }
       return false;
     }
 
@@ -352,7 +389,7 @@
           <td class="text-sm text-muted">${c.Department||'—'}</td>
           <td>
             <div style="display:flex;gap:4px;flex-wrap:wrap;">
-              <button class="btn btn-secondary btn-sm" onclick="openUpdate(${c.ComplaintID}, '${c.Status}', '${c.Department||''}')"><i class="fa-solid fa-edit"></i></button>
+              <button class="btn btn-secondary btn-sm" onclick="openUpdate(${c.ComplaintID}, '${c.Status}', '${c.Department||''}', ${JSON.stringify(c.Location||'')})"><i class="fa-solid fa-edit"></i></button>
               ${c.Image ? `<button class="btn btn-secondary btn-sm" onclick="viewImg('${c.Image}')"><i class="fa-solid fa-image"></i></button>` : ''}
               <button class="btn btn-danger btn-sm" onclick="deleteComplaint(${c.ComplaintID})"><i class="fa-solid fa-trash"></i></button>
             </div>
@@ -385,12 +422,123 @@
       }).join('') || '<div class="text-center text-muted">No activity logs yet.</div>';
     }
 
-    function openUpdate(id, currentStatus, currentDept) {
+    // ============= MAP HELPERS =============
+    function parseCoords(locStr) {
+      if (!locStr) return null;
+      const m = locStr.match(/(-?\d{1,3}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
+      return m ? [parseFloat(m[1]), parseFloat(m[2])] : null;
+    }
+
+    let miniMapInstance = null;
+    let miniMapMarker = null;
+
+    function openUpdate(id, currentStatus, currentDept, location) {
       document.getElementById('editComplaintId').value = id;
       document.getElementById('editStatus').value = currentStatus;
-      document.getElementById('editDepartment').value = currentDept;
+      document.getElementById('editDepartment').value = currentDept || '';
       document.getElementById('editResponse').value = '';
+
+      // Show mini map if coords available
+      const coords = parseCoords(location);
+      const miniMapDiv = document.getElementById('modalMiniMap');
+      const locationText = document.getElementById('modalLocationText');
+      const locationSpan = document.getElementById('modalLocationSpan');
+
+      if (coords) {
+        miniMapDiv.style.display = 'block';
+        locationText.style.display = 'block';
+        locationSpan.textContent = location;
+        // Small delay to ensure modal is rendered/visible
+        setTimeout(() => {
+          if (miniMapInstance) { miniMapInstance.remove(); miniMapInstance = null; }
+          miniMapInstance = L.map('modalMiniMap', { zoomControl: true, attributionControl: false }).setView(coords, 14);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMapInstance);
+          const icon = L.divIcon({
+            className: '',
+            html: '<div style="width:16px;height:16px;background:#f87171;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(248,113,113,0.8);"></div>',
+            iconSize: [16,16], iconAnchor: [8,8]
+          });
+          L.marker(coords, { icon })
+            .addTo(miniMapInstance)
+            .bindPopup(`<strong style="color:#f87171">📍 Incident Location</strong><br><small>${location}</small>`)
+            .openPopup();
+          miniMapInstance.invalidateSize();
+        }, 150);
+      } else {
+        miniMapDiv.style.display = 'none';
+        locationText.style.display = location ? 'block' : 'none';
+        if (location) locationSpan.textContent = location;
+      }
+
       document.getElementById('statusModal').classList.add('open');
+    }
+
+    // ============= FULL MAP VIEW =============
+    let adminMapInstance = null;
+    let adminMapMarkers = [];
+
+    async function loadMapView() {
+      const statusEl = document.getElementById('mapStatus');
+      statusEl.textContent = 'Loading complaint locations...';
+
+      // Init map if needed
+      if (!adminMapInstance) {
+        adminMapInstance = L.map('adminComplaintsMap', { zoomControl: true, attributionControl: true }).setView([20.5937, 78.9629], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>'
+        }).addTo(adminMapInstance);
+      }
+
+      // Clear existing markers
+      adminMapMarkers.forEach(m => adminMapInstance.removeLayer(m));
+      adminMapMarkers = [];
+
+      try {
+        const res = await fetch('/api/admin/complaints', { headers: { 'Authorization': `Bearer ${adminToken}` } });
+        const complaints = await res.json();
+        let plotted = 0;
+
+        complaints.forEach(c => {
+          const coords = parseCoords(c.Location);
+          if (!coords) return;
+          plotted++;
+
+          // Color by priority/status
+          let color = '#fbbf24'; // medium/default
+          if (c.IsEmergency || c.Priority === 'Emergency') color = '#f87171';
+          else if (c.Priority === 'High') color = '#fb923c';
+          else if (c.Status === 'Resolved') color = '#4ade80';
+
+          const icon = L.divIcon({
+            className: '',
+            html: `<div style="width:14px;height:14px;background:${color};border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px ${color}80;"></div>`,
+            iconSize: [14,14], iconAnchor: [7,7]
+          });
+
+          const m = L.marker(coords, { icon }).addTo(adminMapInstance);
+          m.bindPopup(`
+            <strong style="color:${color}">${c.IsEmergency ? '🚨 ' : '📍 '}${c.Title}</strong><br>
+            <small>Category: ${c.Category}</small><br>
+            <small>Priority: ${c.Priority} | Status: ${c.Status}</small><br>
+            <small>User: ${c.UserName || 'Unknown'}</small><br>
+            <small>${c.Location}</small>
+          `);
+          adminMapMarkers.push(m);
+        });
+
+        // Fit bounds if we have markers
+        if (adminMapMarkers.length > 0) {
+          const group = L.featureGroup(adminMapMarkers);
+          adminMapInstance.fitBounds(group.getBounds().pad(0.2));
+        }
+
+        adminMapInstance.invalidateSize();
+        statusEl.textContent = plotted > 0
+          ? `Showing ${plotted} complaint location${plotted > 1 ? 's' : ''} (${complaints.length - plotted} without GPS coordinates)`
+          : `No GPS-based complaints found. ${complaints.length} complaints have text-only locations.`;
+      } catch(err) {
+        statusEl.textContent = 'Failed to load map data. Please try again.';
+      }
     }
 
     async function saveUpdate() {
