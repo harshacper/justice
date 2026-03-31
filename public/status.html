@@ -1,107 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complaint Status - JusticeLine</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard - JusticeLine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <div class="logo-container">
-            <i class="fa-solid fa-scale-balanced fa-2x"></i>
-            <h1>JusticeLine</h1>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="submit.html">New Complaint</a></li>
-                <li><a href="#" onclick="logout()">Logout</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <div class="container" style="align-items: flex-start; margin-top: 2rem;">
-        <div class="glass-card large" style="width: 100%;">
-            <h2>My Complaints Status</h2>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Complaint ID</th>
-                            <th>Date</th>
-                            <th>Category</th>
-                            <th>Description</th>
-                            <th>Priority</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userComplaintsBody">
-                        <!-- Loaded dynamically -->
-                        <tr><td colspan="6" class="text-center">Loading complaints...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="text-center mt-3">
-                <a href="submit.html" class="btn"><i class="fa-solid fa-plus"></i> File Another Complaint</a>
-            </div>
-        </div>
+  <header class="site-header">
+    <a href="index.html" class="logo"><i class="fa-solid fa-scale-balanced"></i> JusticeLine</a>
+    <nav><ul id="userNav"></ul></nav>
+    <div class="header-actions">
+      <button class="dark-toggle" id="darkToggle"><i class="fa-solid fa-moon"></i></button>
+      <button class="hamburger" id="hamburger"><i class="fa-solid fa-bars"></i></button>
     </div>
+  </header>
 
-    <script src="js/main.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const userId = localStorage.getItem('userId');
-            if(!userId) {
-                window.location.href = 'login.html';
-            } else {
-                fetchUserComplaints(userId);
-            }
-        });
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sideAvatar">U</div>
+        <div class="sidebar-user-info">
+          <strong id="sideUserName">Loading...</strong>
+          <span>Citizen Account</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Main Menu</div>
+        <a href="status.html" class="active"><i class="fa-solid fa-gauge"></i> My Dashboard</a>
+        <a href="submit.html"><i class="fa-solid fa-file-circle-plus"></i> Submit Complaint</a>
+        <div class="nav-label">Information</div>
+        <a href="how-it-works.html"><i class="fa-solid fa-circle-info"></i> How It Works</a>
+        <a href="faq.html"><i class="fa-solid fa-circle-question"></i> FAQ</a>
+        <a href="contact.html"><i class="fa-solid fa-headset"></i> Contact Support</a>
+        <div class="nav-label">Account</div>
+        <a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+      </nav>
+    </aside>
 
-        async function fetchUserComplaints(userId) {
-            try {
-                const response = await fetch(`/api/complaints/user/${userId}`);
-                const data = await response.json();
-                const tbody = document.getElementById('userComplaintsBody');
-                tbody.innerHTML = '';
-                
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No complaints filed yet.</td></tr>';
-                    return;
-                }
+    <main class="main-area">
 
-                data.forEach(comp => {
-                    let badgeClass = 'pending';
-                    if (comp.Status === 'In Progress') badgeClass = 'progress';
-                    if (comp.Status === 'Resolved') badgeClass = 'resolved';
+      <!-- Header row -->
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h1 style="font-size:1.6rem;margin-bottom:0.2rem;">My Dashboard</h1>
+          <p class="text-muted text-sm" id="welcomeMsg">Welcome back! Here's an overview of your reports.</p>
+        </div>
+        <a href="submit.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Complaint</a>
+      </div>
 
-                    const row = `
-                        <tr>
-                            <td>#${String(comp.ComplaintID).padStart(4, '0')}</td>
-                            <td>${new Date(comp.Timestamp).toLocaleDateString()}</td>
-                            <td>${comp.Category}</td>
-                            <td>${comp.Title}</td>
-                            <td>${comp.Priority}</td>
-                            <td><span class="badge ${badgeClass}">${comp.Status}</span></td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
-            } catch (err) {
-                console.error(err);
-                document.getElementById('userComplaintsBody').innerHTML = '<tr><td colspan="6" class="text-center">Failed to load internal data.</td></tr>';
-            }
-        }
+      <!-- Stats Row -->
+      <div class="stats-grid" id="userStats">
+        <div class="stat-card blue"><div class="stat-icon"><i class="fa-solid fa-file-lines"></i></div><div><div class="stat-value" id="stTotal">—</div><div class="stat-label">Total Reports</div></div></div>
+        <div class="stat-card orange"><div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div><div><div class="stat-value" id="stPending">—</div><div class="stat-label">Pending</div></div></div>
+        <div class="stat-card" style="border-left-color:var(--info)"><div class="stat-icon" style="background:var(--info-bg);color:var(--info)"><i class="fa-solid fa-gears"></i></div><div><div class="stat-value" id="stProgress">—</div><div class="stat-label">In Progress</div></div></div>
+        <div class="stat-card green"><div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div><div><div class="stat-value" id="stResolved">—</div><div class="stat-label">Resolved</div></div></div>
+      </div>
 
-        function logout() {
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userName');
-            window.location.href = 'login.html';
-        }
-    </script>
+      <!-- Filters -->
+      <div class="filter-bar">
+        <div class="form-group">
+          <label>Search</label>
+          <input type="text" id="filterSearch" class="form-control" placeholder="Search your complaints...">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="filterStatus" class="form-control">
+            <option value="">All Statuses</option>
+            <option>Pending</option><option>In Progress</option><option>Resolved</option><option>Rejected</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="filterPriority" class="form-control">
+            <option value="">All Priorities</option>
+            <option>Emergency</option><option>High</option><option>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div class="form-group" style="align-self:flex-end">
+          <button class="btn btn-secondary" onclick="applyFilters()"><i class="fa-solid fa-filter"></i> Filter</button>
+        </div>
+      </div>
+
+      <!-- Complaints Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fa-solid fa-list"></i> Complaint History</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadComplaints()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead><tr>
+              <th>ID</th><th>Title & Category</th><th>Location</th>
+              <th>Priority</th><th>Status</th><th>Date</th><th>Admin Response</th>
+            </tr></thead>
+            <tbody id="complaintsBody">
+              <tr><td colspan="7" class="text-center" style="padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Loading your complaints...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="noComplaints" class="hidden" style="text-align:center;padding:3rem;">
+          <i class="fa-solid fa-folder-open" style="font-size:2.5rem;color:var(--text-muted);margin-bottom:1rem;display:block;"></i>
+          <h3 style="margin-bottom:0.5rem;">No Complaints Yet</h3>
+          <p class="text-muted text-sm mb-2">You haven't filed any complaints yet.</p>
+          <a href="submit.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> File Your First Complaint</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- View Response Modal -->
+  <div class="modal-overlay" id="responseModal">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title"><i class="fa-solid fa-message"></i> Official Response</div><button class="modal-close" onclick="closeModal('responseModal')">✕</button></div>
+      <div id="responseContent" style="color:var(--text-secondary);line-height:1.7;"></div>
+      <div class="modal-footer"><button class="btn btn-primary" onclick="closeModal('responseModal')">Close</button></div>
+    </div>
+  </div>
+
+  <button class="sos-float" id="sosBtn" onclick="triggerSOS()"><i class="fa-solid fa-triangle-exclamation"></i><span>EMERGENCY SOS</span></button>
+
+  <script src="js/main.js"></script>
+  <script>
+    let allComplaints = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('jl_token');
+      const name = localStorage.getItem('jl_name');
+      if (!token) { window.location.href = 'login.html'; return; }
+      if (name) {
+        document.getElementById('sideUserName').textContent = name;
+        document.getElementById('sideAvatar').textContent = name[0].toUpperCase();
+        document.getElementById('welcomeMsg').textContent = `Welcome back, ${name}! Here's your complaint overview.`;
+      }
+      loadComplaints();
+    });
+
+    async function loadComplaints() {
+      const token = localStorage.getItem('jl_token');
+      try {
+        const res = await fetch('/api/complaints/user', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.status === 401) { window.location.href = 'login.html'; return; }
+        allComplaints = await res.json();
+        renderComplaints(allComplaints);
+        updateStats(allComplaints);
+      } catch {
+        document.getElementById('complaintsBody').innerHTML = '<tr><td colspan="7" class="text-center text-muted">Failed to load. Check connection.</td></tr>';
+      }
+    }
+
+    function updateStats(data) {
+      document.getElementById('stTotal').textContent = data.length;
+      document.getElementById('stPending').textContent = data.filter(c => c.Status === 'Pending').length;
+      document.getElementById('stProgress').textContent = data.filter(c => c.Status === 'In Progress').length;
+      document.getElementById('stResolved').textContent = data.filter(c => c.Status === 'Resolved').length;
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('filterSearch').value.toLowerCase();
+      const status = document.getElementById('filterStatus').value;
+      const priority = document.getElementById('filterPriority').value;
+      const filtered = allComplaints.filter(c => {
+        const matchSearch = !search || c.Title.toLowerCase().includes(search) || c.Description.toLowerCase().includes(search);
+        const matchStatus = !status || c.Status === status;
+        const matchPriority = !priority || c.Priority === priority;
+        return matchSearch && matchStatus && matchPriority;
+      });
+      renderComplaints(filtered);
+    }
+
+    function renderComplaints(data) {
+      const tbody = document.getElementById('complaintsBody');
+      const noComp = document.getElementById('noComplaints');
+      if (!data.length) {
+        tbody.innerHTML = '';
+        noComp.classList.remove('hidden');
+        return;
+      }
+      noComp.classList.add('hidden');
+
+      const statusBadge = s => {
+        const map = { 'Pending': 'badge-pending', 'In Progress': 'badge-progress', 'Resolved': 'badge-resolved', 'Rejected': 'badge-rejected' };
+        return `<span class="badge ${map[s]||'badge-pending'}">${s}</span>`;
+      };
+      const priorityBadge = p => {
+        const map = { 'Emergency': 'badge-emergency', 'High': 'badge-high', 'Medium': 'badge-medium', 'Low': 'badge-low' };
+        return `<span class="badge ${map[p]||'badge-medium'}">${p==='Emergency'?'🚨 ':''}${p}</span>`;
+      };
+
+      tbody.innerHTML = data.map(c => `
+        <tr class="${c.IsEmergency ? 'emergency-row' : ''}">
+          <td><strong style="color:var(--primary)">#${String(c.ComplaintID).padStart(4,'0')}</strong></td>
+          <td>
+            <div class="font-bold text-sm" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.Title}</div>
+            <div class="text-muted" style="font-size:0.78rem;">${c.Category}</div>
+          </td>
+          <td class="text-sm text-muted truncate" style="max-width:140px;">${c.Location || '—'}</td>
+          <td>${priorityBadge(c.Priority)}</td>
+          <td>${statusBadge(c.Status)}</td>
+          <td class="text-sm text-muted">${c.Date || '—'}</td>
+          <td>${c.AdminResponse ? `<button class="btn btn-secondary btn-sm" onclick="viewResponse('${encodeURIComponent(c.AdminResponse)}')"><i class="fa-solid fa-message"></i> View</button>` : '<span class="text-muted text-sm">—</span>'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function viewResponse(encoded) {
+      document.getElementById('responseContent').textContent = decodeURIComponent(encoded);
+      document.getElementById('responseModal').classList.add('open');
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  </script>
 </body>
 </html>

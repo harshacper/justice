@@ -1,109 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JusticeLine - Online Complaint Management System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JusticeLine - Report. Track. Resolve.</title>
+  <meta name="description" content="JusticeLine is a secure digital complaint management system for citizens to report civic issues, emergencies, and grievances directly to authorities.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <div class="logo-container">
-            <i class="fa-solid fa-scale-balanced fa-2x"></i>
-            <h1>JusticeLine</h1>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="login.html">Login</a></li>
-                <li><a href="register.html">Register</a></li>
-                <li><a href="admin.html">Admin</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <div class="container hero">
-        <div>
-            <h1>Justice for All, Anytime.</h1>
-            <p>A secure, anonymous, and efficient way to report grievances and illegal activities directly to authorities.</p>
-
-            <div class="features">
-                <div class="feature-col">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <h3>Secure & Anonymous</h3>
-                    <p style="font-size: 0.9rem; margin-top: 10px;">Your identity and data are protected with high-grade encryption.</p>
-                </div>
-                <div class="feature-col">
-                    <i class="fa-solid fa-map-location-dot"></i>
-                    <h3>Smart Location</h3>
-                    <p style="font-size: 0.9rem; margin-top: 10px;">Automated GPS tracking to precisely log incident areas.</p>
-                </div>
-                <div class="feature-col">
-                    <i class="fa-solid fa-gavel"></i>
-                    <h3>Direct Action</h3>
-                    <p style="font-size: 0.9rem; margin-top: 10px;">Connect instantly with law enforcement and authoritative bodies.</p>
-                </div>
-            </div>
-
-            <!-- Submit button placed at the bottom of the home content as requested -->
-            <a href="submit.html" class="btn" style="font-size: 1.25rem; padding: 15px 40px; border-radius: 50px; width: auto; margin-top: 2rem;">
-                <i class="fa-solid fa-bullhorn" style="margin-right: 10px;"></i>
-                Submit Complaint
-            </a>
-        </div>
+  <header class="site-header">
+    <a href="index.html" class="logo"><i class="fa-solid fa-scale-balanced"></i> JusticeLine</a>
+    <nav><ul id="userNav"></ul></nav>
+    <div class="header-actions">
+      <button class="dark-toggle" id="darkToggle" title="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+      <button class="hamburger" id="hamburger"><i class="fa-solid fa-bars"></i></button>
     </div>
+  </header>
 
-    <footer>
-        <p>&copy; 2026 JusticeLine Complaint Management System. Secure & Confidential.</p>
-    </footer>
-
-    <!-- Emergency SOS Button -->
-    <div class="sos-btn" id="sosBtn" onclick="triggerSOS()">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <span>EMERGENCY SOS</span>
+  <!-- HERO -->
+  <section class="landing-hero">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1>Report Issues. <span>Track Progress.</span> Demand Resolution.</h1>
+        <p>JusticeLine empowers citizens to file complaints about civic issues, emergencies, and public safety concerns directly to authorities — securely and transparently.</p>
+        <div class="hero-cta">
+          <a href="register.html" class="btn btn-white btn-lg"><i class="fa-solid fa-user-plus"></i> Get Started Free</a>
+          <a href="how-it-works.html" class="btn btn-ghost btn-lg"><i class="fa-solid fa-play-circle"></i> See How It Works</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><strong id="heroTotal">—</strong><span>Complaints Filed</span></div>
+          <div class="hero-stat"><strong id="heroResolved">—</strong><span>Issues Resolved</span></div>
+          <div class="hero-stat"><strong>24/7</strong><span>System Online</span></div>
+        </div>
+      </div>
+      <div class="hero-card">
+        <h3><i class="fa-solid fa-file-circle-plus"></i> &nbsp;File a Report</h3>
+        <div class="hero-category-grid">
+          <div class="hero-cat" onclick="window.location='submit.html'"><i class="fa-solid fa-car-burst"></i>Road Accident</div>
+          <div class="hero-cat" onclick="window.location='submit.html'"><i class="fa-solid fa-droplet-slash"></i>Water Leakage</div>
+          <div class="hero-cat" onclick="window.location='submit.html'"><i class="fa-solid fa-bolt-lightning"></i>Electricity</div>
+          <div class="hero-cat" onclick="window.location='submit.html'"><i class="fa-solid fa-trash-can"></i>Garbage</div>
+          <div class="hero-cat emergency-cat" onclick="window.location='submit.html'"><i class="fa-solid fa-fire"></i>Fire Hazard</div>
+          <div class="hero-cat emergency-cat" onclick="window.location='submit.html'"><i class="fa-solid fa-triangle-exclamation"></i>Emergency</div>
+        </div>
+        <a href="submit.html" class="btn btn-white w-full mt-2" style="justify-content:center;color:var(--primary);margin-top:1rem;"><i class="fa-solid fa-arrow-right"></i> Submit Complaint</a>
+      </div>
     </div>
+  </section>
 
-    <script src="js/main.js"></script>
-    <script>
-        async function triggerSOS() {
-            if(confirm("ALERT: Are you sure you want to send an emergency signal to authorities (Email & SMS will be dispatched)?")) {
-                const userName = prompt("Enter your name (optional):", "Anonymous");
-                const userPhone = prompt("Enter your phone number (optional):", "");
-                const details = prompt("Briefly describe the emergency:", "Urgent help needed!");
-                
-                let locationStr = "Location not provided";
-                // Try to get location
-                if(navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(async (pos) => {
-                        locationStr = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}`;
-                        sendHelpRequest(userName, userPhone, locationStr, details);
-                    }, () => {
-                        sendHelpRequest(userName, userPhone, locationStr, details);
-                    });
-                } else {
-                    sendHelpRequest(userName, userPhone, locationStr, details);
-                }
-            }
-        }
+  <!-- FEATURES -->
+  <section class="landing-section">
+    <div class="section-header">
+      <span class="section-label">Why JusticeLine?</span>
+      <h2>Built for Real-World Problems</h2>
+      <p>A professional platform designed to handle civic complaints with transparency, speed, and security.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3>Secure & Private</h3>
+        <p>JWT-based authentication with bcrypt encryption ensures your identity and data are always protected.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#dcfce7;color:#16a34a"><i class="fa-solid fa-map-location-dot"></i></div>
+        <h3>GPS Location Tagging</h3>
+        <p>Auto-capture GPS coordinates or manually input locations so authorities can respond precisely.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fee2e2;color:#dc2626"><i class="fa-solid fa-bell-concierge"></i></div>
+        <h3>Emergency SOS</h3>
+        <p>One-click emergency alerts sent instantly to authorities via email and SMS notifications.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-chart-line"></i></div>
+        <h3>Real-Time Tracking</h3>
+        <p>Track your complaint status live — Pending, In Progress, or Resolved — from your personal dashboard.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#e0f2fe;color:#0284c7"><i class="fa-solid fa-image"></i></div>
+        <h3>Media Evidence Upload</h3>
+        <p>Attach photo or video evidence to your complaints for faster verification and action by authorities.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#f3e8ff;color:#7c3aed"><i class="fa-solid fa-user-shield"></i></div>
+        <h3>Admin Control Panel</h3>
+        <p>Dedicated admin dashboard with complaint filtering, department assignment, and response messaging.</p>
+      </div>
+    </div>
+  </section>
 
-        async function sendHelpRequest(name, phone, loc, msg) {
-            document.getElementById('sosBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>SENDING...</span>';
-            try {
-                const res = await fetch('/api/help', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, phone, location: loc, message: msg })
-                });
-                const data = await res.json();
-                alert(data.message);
-            } catch(e) {
-                alert("Error sending SOS. Please call 911 directly.");
-            } finally {
-                document.getElementById('sosBtn').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>EMERGENCY SOS</span>';
-            }
-        }
-    </script>
+  <!-- HOW IT WORKS -->
+  <section class="landing-section grey">
+    <div class="section-header">
+      <span class="section-label">Simple Process</span>
+      <h2>3 Easy Steps to File a Complaint</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-item"><div class="step-num">1</div><h3>Create Your Account</h3><p>Register with your email, phone number, and address. Takes under 60 seconds.</p></div>
+      <div class="step-item"><div class="step-num">2</div><h3>Submit Your Report</h3><p>Fill the complaint form with details, photos, location, and choose the priority level.</p></div>
+      <div class="step-item"><div class="step-num">3</div><h3>Track & Resolve</h3><p>Monitor real-time status updates as authorities investigate and resolve your complaint.</p></div>
+    </div>
+    <div style="text-align:center;margin-top:2.5rem;">
+      <a href="register.html" class="btn btn-primary btn-lg"><i class="fa-solid fa-rocket"></i> Start Filing Now</a>
+    </div>
+  </section>
+
+  <!-- EMERGENCY NOTICE -->
+  <section class="landing-section" style="padding:3rem 2rem;">
+    <div style="max-width:900px;margin:0 auto;">
+      <div class="emergency-section" style="text-align:center;padding:2.5rem;">
+        <div class="emergency-section-title" style="justify-content:center;font-size:1.4rem;">🚨 Immediate Attention Required</div>
+        <p style="color:var(--text-secondary);margin-bottom:1.5rem;max-width:560px;margin-left:auto;margin-right:auto;">For life-threatening emergencies — accidents, fire, medical crises or active crime — use Emergency SOS to instantly notfy authorities.</p>
+        <button class="sos-float" style="position:static;display:inline-flex;" onclick="triggerSOS()">
+          <i class="fa-solid fa-triangle-exclamation"></i> <span>EMERGENCY SOS</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <p>© 2026 JusticeLine Complaint Management System. Secure & Confidential.</p>
+    <div class="footer-links">
+      <a href="about.html">About</a><a href="how-it-works.html">How It Works</a>
+      <a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="admin.html">Admin</a>
+    </div>
+  </footer>
+
+  <button class="sos-float" id="sosBtn" onclick="triggerSOS()"><i class="fa-solid fa-triangle-exclamation"></i><span>EMERGENCY SOS</span></button>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Load live stats
+    fetch('/api/admin/stats').then(r=>r.json()).then(d=>{
+      document.getElementById('heroTotal').textContent = d.total||'0';
+      document.getElementById('heroResolved').textContent = d.resolved||'0';
+    }).catch(()=>{});
+  </script>
 </body>
 </html>
