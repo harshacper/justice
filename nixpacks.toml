@@ -1,8 +1,11 @@
-# Railway Nixpacks Configuration
-# This tells Railway exactly how to build and run the app
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install"]
 
 [phases.build]
-cmds = ["npm install"]
+cmds = []
 
 [start]
 cmd = "node server.js"
