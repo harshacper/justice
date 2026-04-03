@@ -19,12 +19,23 @@ const TWILIO_MSG_SID = process.env.TWILIO_MESSAGING_SERVICE_SID || 'MG4a7e8fa099
 const ADMIN_PHONE    = process.env.ADMIN_PHONE || '+919380268436';
 
 const sendSMS = async (body, to = ADMIN_PHONE) => {
-    if (!TWILIO_SID || !TWILIO_TOKEN) { console.log('[SMS] Skipped – no Twilio credentials'); return; }
+    if (!TWILIO_SID || !TWILIO_TOKEN) {
+        console.log('[SMS] Skipped – add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN to .env');
+        return { success: false, reason: 'No Twilio credentials configured' };
+    }
     try {
         const twilio = require('twilio')(TWILIO_SID, TWILIO_TOKEN);
-        await twilio.messages.create({ body, messagingServiceSid: TWILIO_MSG_SID, to });
-        console.log('[SMS Sent]:', body.substring(0, 60));
-    } catch (err) { console.error('[SMS Error]:', err.message); }
+        const msg = await twilio.messages.create({
+            body: body.substring(0, 1600),
+            messagingServiceSid: TWILIO_MSG_SID,
+            to
+        });
+        console.log(`[SMS ✅ Sent] SID: ${msg.sid} → ${to}: ${body.substring(0, 50)}...`);
+        return { success: true, sid: msg.sid };
+    } catch (err) {
+        console.error('[SMS ❌ Error]:', err.message);
+        return { success: false, reason: err.message };
+    }
 };
 
 // ======================== EMAIL CONFIG ========================
@@ -352,8 +363,50 @@ app.post('/api/help', async (req, res) => {
     res.json({ message: 'Emergency alert sent to authorities via Email & SMS.' });
 });
 
+// ======================== SMS STATUS CHECK ========================
+app.get('/api/sms-status', (_req, res) => {
+    const configured = !!(TWILIO_SID && TWILIO_TOKEN);
+    res.json({
+        configured,
+        messagingServiceSid: TWILIO_MSG_SID,
+        adminPhone: ADMIN_PHONE,
+        accountSidSet: !!TWILIO_SID,
+        authTokenSet: !!TWILIO_TOKEN,
+        message: configured
+            ? '✅ Twilio SMS is configured and ready'
+            : '⚠️ Add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN to .env to enable SMS'
+    });
+});
+
+// ======================== SEND SMS FROM WEBSITE ========================
+app.post('/api/send-sms', async (req, res) => {
+    const { message, phone, type } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message is required.' });
+
+    // Allow sending to admin phone or a user-supplied phone
+    const targetPhone = phone || ADMIN_PHONE;
+    const prefix = type === 'support'  ? '📨 Support Request'  :
+                   type === 'sos'      ? '🚨 EMERGENCY SOS'   :
+                   type === 'complaint'? '📋 New Complaint'    : '📱 JusticeLine';
+
+    const fullMsg = `${prefix}\n${message}\n\n— JusticeLine System`;
+    const result = await sendSMS(fullMsg, targetPhone);
+
+    if (result?.success) {
+        await logActivity('SMS_SENT', null, `SMS to ${targetPhone}: ${type||'general'}`);
+        res.json({ success: true, message: `SMS sent successfully to ${targetPhone}`, sid: result.sid });
+    } else {
+        res.status(200).json({
+            success: false,
+            message: result?.reason || 'SMS not configured. Add Twilio credentials to .env',
+            hint: 'Get Account SID and Auth Token from https://console.twilio.com'
+        });
+    }
+});
+
 // ======================== HEALTH CHECK ========================
-app.get('/health', (_req, res) => res.json({ status:'ok', mode: IS_PROD?'postgresql':'sqlite', time: new Date().toISOString() }));
+app.get('/health', (_req, res) => res.json({ status:'ok', mode: IS_PROD?'postgresql':'sqlite', sms: !!(TWILIO_SID && TWILIO_TOKEN), time: new Date().toISOString() }));
+
 
 // ======================== STARTUP ========================
 async function startServer() {
