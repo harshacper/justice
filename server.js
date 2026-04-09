@@ -138,6 +138,10 @@ async function initPostgres() {
             AdminResponse TEXT,
             AssignedTo   TEXT,
             IsEmergency  BOOLEAN DEFAULT FALSE,
+            MLCategory   TEXT,
+            MLPriority   TEXT,
+            MLSentiment  TEXT,
+            MLConfidence INTEGER DEFAULT 0,
             Timestamp    TIMESTAMP DEFAULT NOW()
         )
     `);
@@ -182,9 +186,10 @@ async function initSQLite() {
     await new Promise((res) => sqlDb.serialize(() => {
         sqlDb.run(`CREATE TABLE IF NOT EXISTS Users (UserID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Phone TEXT, Email TEXT UNIQUE, Password TEXT, Address TEXT, CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP)`);
         sqlDb.run(`CREATE TABLE IF NOT EXISTS Admin (AdminID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT UNIQUE, Password TEXT, Role TEXT DEFAULT 'admin')`);
-        sqlDb.run(`CREATE TABLE IF NOT EXISTS Complaints (ComplaintID INTEGER PRIMARY KEY AUTOINCREMENT, UserID INTEGER, Title TEXT, Description TEXT, Category TEXT, Priority TEXT DEFAULT 'Medium', Image TEXT, Location TEXT, Date TEXT, Status TEXT DEFAULT 'Pending', Department TEXT DEFAULT 'General', AdminResponse TEXT, AssignedTo TEXT, IsEmergency INTEGER DEFAULT 0, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(UserID) REFERENCES Users(UserID))`);
+        sqlDb.run(`CREATE TABLE IF NOT EXISTS Complaints (ComplaintID INTEGER PRIMARY KEY AUTOINCREMENT, UserID INTEGER, Title TEXT, Description TEXT, Category TEXT, Priority TEXT DEFAULT 'Medium', Image TEXT, Location TEXT, Date TEXT, Status TEXT DEFAULT 'Pending', Department TEXT DEFAULT 'General', AdminResponse TEXT, AssignedTo TEXT, IsEmergency INTEGER DEFAULT 0, MLCategory TEXT, MLPriority TEXT, MLSentiment TEXT, MLConfidence INTEGER DEFAULT 0, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(UserID) REFERENCES Users(UserID))`);
         sqlDb.run(`CREATE TABLE IF NOT EXISTS ActivityLogs (LogID INTEGER PRIMARY KEY AUTOINCREMENT, Action TEXT, UserID INTEGER, Details TEXT, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-        ['Department TEXT DEFAULT "General"','AdminResponse TEXT','AssignedTo TEXT','IsEmergency INTEGER DEFAULT 0'].forEach(c => sqlDb.run(`ALTER TABLE Complaints ADD COLUMN ${c}`, () => {}));
+        // Migration: add columns if missing
+        ['Department TEXT DEFAULT "General"','AdminResponse TEXT','AssignedTo TEXT','IsEmergency INTEGER DEFAULT 0','MLCategory TEXT','MLPriority TEXT','MLSentiment TEXT','MLConfidence INTEGER DEFAULT 0'].forEach(c => sqlDb.run(`ALTER TABLE Complaints ADD COLUMN ${c}`, () => {}));
         res();
     }));
     for (const [name, pass] of [['harsha123','harsha1432'],['admin','admin123']]) {
@@ -404,8 +409,85 @@ app.post('/api/send-sms', async (req, res) => {
     }
 });
 
+// ======================== ML ANALYZE API ========================
+// Server-side keyword-based ML (mirrors client ml-engine.js)
+const ML_CATS = {
+    'Road Accident':['accident','crash','collision','vehicle','car','bike','road','traffic','hit','injured'],
+    'Fire Hazard':['fire','burn','flame','smoke','explosion','blaze','arson','gas leak','electric fire'],
+    'Medical Emergency':['medical','hospital','ambulance','heart attack','unconscious','bleeding','seizure','stroke','critical'],
+    'Crime in Progress':['crime','robbery','theft','murder','assault','stabbing','kidnap','rape','gang','burglar'],
+    'Gas Leak':['gas','lpg','cng','pipe burst','smell','leak','cylinder','methane'],
+    'Flood / Natural Disaster':['flood','waterlogging','cyclone','earthquake','landslide','storm','disaster','submerged'],
+    'Water Leakage':['water','leak','pipeline','tap','drainage','sewage','burst pipe','no water','contaminated'],
+    'Electricity Issue':['electricity','power cut','blackout','transformer','wire','electric','voltage','no power','streetlight'],
+    'Garbage Dumping':['garbage','trash','waste','dumping','litter','rubbish','smell','filth','bin'],
+    'Road Damage':['pothole','road damage','broken road','crack','uneven','footpath','road repair'],
+    'Corruption':['bribe','corruption','extortion','fraud','illegal','embezzlement','scam','money'],
+    'Harassment':['harassment','bully','stalk','eve teasing','verbal abuse','domestic violence','abuse'],
+    'Noise Pollution':['noise','loud','sound','music','speaker','horn','construction noise','disturbing']
+};
+const ML_PRIORITY_WORDS = {
+    Emergency:['death','dead','dying','murder','explosion','fire','bleeding','unconscious','bomb','critical','urgent','rape','kidnap','heart attack','flood','disaster'],
+    High:     ['accident','injury','injured','severe','serious','dangerous','crime','violence','robbery','threat','assault','hospital','ambulance'],
+    Low:      ['suggestion','feedback','general','inquiry','information','slow','delay','minor','small','noise']
+};
+const ML_DEPTS = {'Road Accident':'Traffic & Road Safety','Fire Hazard':'Fire Department','Medical Emergency':'Health & Medical Services','Crime in Progress':'Police Department','Gas Leak':'Gas & Utilities','Flood / Natural Disaster':'Disaster Management','Water Leakage':'Water & Sanitation','Electricity Issue':'Electricity Board','Garbage Dumping':'Municipal / Sanitation','Road Damage':'Public Works Dept','Corruption':'Anti-Corruption Bureau','Harassment':'Police / Women Cell','Noise Pollution':'Environment & Pollution'};
+
+function serverMLAnalyze(text = '', existingCat = '') {
+    const lower = text.toLowerCase();
+    let bestCat = existingCat || 'Other', bestScore = 0, totalScore = 0;
+    Object.entries(ML_CATS).forEach(([cat, kws]) => {
+        const s = kws.reduce((acc,kw) => acc + (lower.includes(kw)?1:0), 0);
+        totalScore += s;
+        if (s > bestScore) { bestScore = s; bestCat = cat; }
+    });
+    const confidence = bestScore > 0 ? Math.min(97, Math.round((bestScore/(totalScore||1))*100 + 20)) : 30;
+    let priority = 'Medium';
+    if (ML_PRIORITY_WORDS.Emergency.some(w => lower.includes(w))) priority = 'Emergency';
+    else if (ML_PRIORITY_WORDS.High.some(w => lower.includes(w))) priority = 'High';
+    else if (ML_PRIORITY_WORDS.Low.some(w => lower.includes(w))) priority = 'Low';
+    const posWords = ['good','resolved','fixed','thank','happy','satisfied','working','improved'];
+    const negWords = ['angry','worst','terrible','horrible','frustrated','furious','helpless','scared','fear'];
+    const posScore = posWords.filter(w=>lower.includes(w)).length;
+    const negScore = negWords.filter(w=>lower.includes(w)).length;
+    const sentiment = negScore > posScore ? 'Negative' : posScore > negScore ? 'Positive' : 'Neutral';
+    return { category: bestCat, priority, sentiment, confidence, department: ML_DEPTS[bestCat]||'General Administration' };
+}
+
+app.post('/api/ml/analyze', async (req, res) => {
+    const { text, title, category } = req.body;
+    if (!text) return res.status(400).json({ error: 'Text required.' });
+    const combined = `${title||''} ${text}`;
+    const result = serverMLAnalyze(combined, category);
+    res.json({ success: true, ...result, analyzedAt: new Date().toISOString() });
+});
+
+// ======================== CSV EXPORT ========================
+app.get('/api/export/complaints', adminMiddleware, async (req, res) => {
+    try {
+        const rows = await db.all(`SELECT c.ComplaintID,c.Title,c.Category,c.Priority,c.Status,c.Location,c.Date,c.Department,c.MLCategory,c.MLPriority,c.MLSentiment,c.MLConfidence,c.IsEmergency,c.Timestamp,u.Name as UserName,u.Email,u.Phone FROM Complaints c LEFT JOIN Users u ON c.UserID=u.UserID ORDER BY c.ComplaintID DESC`);
+        const headers = ['ID','Title','Category','Priority','Status','Location','Date','Department','ML Category','ML Priority','ML Sentiment','ML Confidence%','Emergency','Timestamp','User Name','Email','Phone'];
+        const csv = [headers.join(','), ...rows.map(r => [
+            r.ComplaintID||r.complaintid, `"${(r.Title||r.title||'').replace(/"/g,'""')}"`,
+            r.Category||r.category, r.Priority||r.priority, r.Status||r.status,
+            `"${(r.Location||r.location||'').replace(/"/g,'""')}"`,
+            r.Date||r.date, r.Department||r.department,
+            r.MLCategory||r.mlcategory||'—', r.MLPriority||r.mlpriority||'—',
+            r.MLSentiment||r.mlsentiment||'—', r.MLConfidence||r.mlconfidence||0,
+            r.IsEmergency||r.isemergency ? 'YES':'NO',
+            r.Timestamp||r.timestamp, r.UserName||r.username,
+            r.Email||r.email, r.Phone||r.phone
+        ].join(','))].join('\n');
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=justiceline_complaints_${new Date().toISOString().slice(0,10)}.csv`);
+        res.send(csv);
+    } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // ======================== HEALTH CHECK ========================
 app.get('/health', (_req, res) => res.json({ status:'ok', mode: IS_PROD?'postgresql':'sqlite', sms: !!(TWILIO_SID && TWILIO_TOKEN), time: new Date().toISOString() }));
+
+
 
 
 // ======================== STARTUP ========================

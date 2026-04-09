@@ -129,7 +129,8 @@
         <!-- INCIDENT REPORTS (all complaints) -->
         <div id="sec-incidents" class="dash-section hidden">
           <div class="flex items-center justify-between mb-3">
-            <div><h1 style="font-size:1.6rem;margin-bottom:0.2rem;">Incident Reports</h1><p class="text-muted text-sm">All complaints filed by citizens</p></div>
+            <div><h1 style="font-size:1.6rem;margin-bottom:0.2rem;">Incident Reports</h1><p class="text-muted text-sm">All complaints filed by citizens — AI predictions shown in badges</p></div>
+            <button class="btn btn-secondary btn-sm" onclick="exportCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
           </div>
           <div class="filter-bar">
             <div class="form-group"><label>Search</label><input type="text" id="aSearch" class="form-control" placeholder="Title, description..."></div>
@@ -141,7 +142,7 @@
           <div class="card">
             <div class="table-container">
               <table>
-                <thead><tr><th>ID</th><th>Incident</th><th>Citizen Info</th><th>Location</th><th>Priority</th><th>Status</th><th>Department</th><th>Actions</th></tr></thead>
+                <thead><tr><th>ID</th><th>Incident</th><th>Citizen Info</th><th>Location</th><th>Priority</th><th>Status</th><th>🤖 AI Analysis</th><th>Actions</th></tr></thead>
                 <tbody id="incidentsBody"><tr><td colspan="8" class="text-center text-muted">Loading...</td></tr></tbody>
               </table>
             </div>
@@ -231,6 +232,7 @@
   </div>
 
   <button class="sos-float" id="sosBtn" onclick="triggerSOS()"><i class="fa-solid fa-triangle-exclamation"></i><span>EMERGENCY SOS</span></button>
+  <script src="js/ml-engine.js"></script>
   <script src="js/main.js"></script>
   <script>
     let adminToken = localStorage.getItem('jl_admin_token');
@@ -386,7 +388,24 @@
           <td class="text-sm text-muted" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;">${c.Location||'—'}</td>
           <td>${priorityBadge(c.Priority)}</td>
           <td>${statusBadge(c.Status)}</td>
-          <td class="text-sm text-muted">${c.Department||'—'}</td>
+          <td>
+            ${(() => {
+              const mlRes = window.MLEngine ? MLEngine.analyzeText(`${c.Title||''} ${c.Description||''}`, c.Category) : null;
+              if (!mlRes) return `<span style="font-size:0.75rem;color:var(--text-muted)">${c.Department||'—'}</span>`;
+              const pb = MLEngine.priorityBadge(mlRes.priority);
+              const sb = MLEngine.sentimentBadge(mlRes.sentiment);
+              return `
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:700;color:#4ade80"><i class="fa-solid fa-brain" style="font-size:0.65rem"></i>${mlRes.category}</span>
+                  <div style="display:flex;gap:3px;flex-wrap:wrap;">
+                    <span style="font-size:0.68rem;padding:1px 7px;border-radius:10px;background:${pb.bg};color:${pb.color};border:1px solid ${pb.color}40;font-weight:700">${pb.icon} ${mlRes.priority}</span>
+                    <span style="font-size:0.68rem;padding:1px 7px;border-radius:10px;background:${sb.bg};color:${sb.color};border:1px solid ${sb.color}40;font-weight:700">${sb.icon} ${mlRes.sentiment}</span>
+                  </div>
+                  <span style="font-size:0.68rem;color:var(--text-muted)">${mlRes.confidence}% confidence</span>
+                </div>
+              `;
+            })()}
+          </td>
           <td>
             <div style="display:flex;gap:4px;flex-wrap:wrap;">
               <button class="btn btn-secondary btn-sm" onclick="openUpdate(${c.ComplaintID}, '${c.Status}', '${c.Department||''}', ${JSON.stringify(c.Location||'')})"><i class="fa-solid fa-edit"></i></button>
@@ -412,7 +431,20 @@
         </tr>`).join('');
     }
 
+    async function exportCSV() {
+      try {
+        const res = await fetch('/api/export/complaints', { headers: { 'Authorization': `Bearer ${adminToken}` } });
+        if (!res.ok) { alert('Export failed. Please try again.'); return; }
+        const blob = await res.blob();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `justiceline_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click(); URL.revokeObjectURL(link.href);
+      } catch(e) { alert('Export error: ' + e.message); }
+    }
+
     async function loadActivity() {
+
       const res = await fetch('/api/admin/activity', { headers: { 'Authorization': `Bearer ${adminToken}` } });
       const data = await res.json();
       const iconMap = { LOGIN:'fa-right-to-bracket', REGISTER:'fa-user-plus', COMPLAINT_SUBMIT:'fa-file-circle-plus', STATUS_UPDATE:'fa-rotate', ADMIN_LOGIN:'fa-user-shield', ADMIN_RESPONSE:'fa-message', DELETE:'fa-trash', SOS:'fa-triangle-exclamation' };

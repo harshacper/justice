@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/ml-engine.js"></script>
   <style>
     .leaflet-container { background: #111 !important; }
     .map-instructions { font-size:0.78rem; color:var(--text-muted); margin-top:0.4rem; display:flex; align-items:center; gap:6px; }
@@ -16,6 +17,18 @@
     .map-address-display.show { display:flex; }
     .leaflet-popup-content-wrapper { background:#1a1a1a!important; border:1px solid rgba(74,222,128,0.3)!important; color:#f0f0f0!important; }
     .leaflet-popup-tip { background:#1a1a1a!important; }
+    /* ML Panel */
+    .ml-panel { background:linear-gradient(135deg,rgba(74,222,128,0.06),rgba(74,222,128,0.02)); border:1px solid var(--border-green); border-radius:var(--radius); padding:1rem 1.2rem; margin-top:0.8rem; display:none; }
+    .ml-panel.show { display:block; animation:fadeIn 0.3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .ml-panel-title { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--primary); margin-bottom:0.7rem; display:flex; align-items:center; gap:6px; }
+    .ml-badges { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem; }
+    .ml-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; border:1px solid; }
+    .ml-confidence { font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+    .ml-conf-bar { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+    .ml-conf-fill { height:100%; background:var(--primary); border-radius:2px; transition:width 0.4s ease; }
+    .ml-dept { font-size:0.78rem; color:var(--text-secondary); margin-top:0.4rem; }
+    .ml-dept i { color:var(--primary); }
   </style>
 </head>
 <body>
@@ -186,6 +199,17 @@
                 <textarea id="compDesc" class="form-control" style="min-height:180px;" placeholder="Provide as much detail as possible: what happened, who was involved, what action is needed, any witnesses, time of occurrence, etc." required></textarea>
                 <div class="form-hint">More detail = faster resolution. Minimum 30 characters recommended.</div>
               </div>
+
+              <!-- ML PREDICTION PANEL -->
+              <div class="ml-panel" id="mlPanel">
+                <div class="ml-panel-title"><i class="fa-solid fa-brain"></i> AI Analysis — Real-Time Prediction</div>
+                <div class="ml-badges" id="mlBadges"></div>
+                <div class="ml-confidence">
+                  <span id="mlConfText" style="white-space:nowrap;">Confidence: 0%</span>
+                  <div class="ml-conf-bar"><div class="ml-conf-fill" id="mlConfBar" style="width:0%"></div></div>
+                </div>
+                <div class="ml-dept" id="mlDept"></div>
+              </div>
             </div>
 
             <!-- Media Upload -->
@@ -220,6 +244,69 @@
   <script>
     const EMERGENCY_CATS = ['Road Accident','Fire Hazard','Medical Emergency','Crime in Progress','Gas Leak','Flood / Natural Disaster'];
     document.getElementById('compDate').value = new Date().toISOString().split('T')[0];
+
+    // ============= REAL-TIME ML ANALYSIS =============
+    let mlDebounce = null;
+    let lastML = null;
+
+    function runML() {
+      const desc = document.getElementById('compDesc').value.trim();
+      const title = document.getElementById('compTitle')?.value.trim() || '';
+      if ((desc + title).length < 5) { document.getElementById('mlPanel').classList.remove('show'); return; }
+
+      const result = MLEngine.analyzeText(`${title} ${desc}`, document.getElementById('compCategory').value);
+      lastML = result;
+
+      // Show panel
+      document.getElementById('mlPanel').classList.add('show');
+
+      // Build badges
+      const pb = MLEngine.priorityBadge(result.priority);
+      const sb = MLEngine.sentimentBadge(result.sentiment);
+      document.getElementById('mlBadges').innerHTML = `
+        <span class="ml-badge" style="background:rgba(74,222,128,0.12);color:#4ade80;border-color:rgba(74,222,128,0.3)">
+          <i class="fa-solid fa-brain" style="font-size:0.7rem;"></i> ${result.category}
+        </span>
+        <span class="ml-badge" style="background:${pb.bg};color:${pb.color};border-color:${pb.color}40">
+          ${pb.icon} ${result.priority}
+        </span>
+        <span class="ml-badge" style="background:${sb.bg};color:${sb.color};border-color:${sb.color}40">
+          ${sb.icon} ${result.sentiment}
+        </span>
+      `;
+
+      // Confidence bar
+      document.getElementById('mlConfText').textContent = `AI Confidence: ${result.confidence}%`;
+      document.getElementById('mlConfBar').style.width = `${result.confidence}%`;
+
+      // Department
+      document.getElementById('mlDept').innerHTML = `<i class="fa-solid fa-building-columns"></i> Suggested Dept: <strong>${result.department}</strong>`;
+
+      // Auto-select category if not already chosen
+      const catEl = document.getElementById('compCategory');
+      if (!catEl.value && result.confidence > 45) {
+        catEl.value = result.category;
+        catEl.dispatchEvent(new Event('change'));
+      }
+      // Auto-select priority
+      const priId = { Emergency:'pEmergency', High:'pHigh', Medium:'pMed', Low:'pLow' }[result.priority];
+      if (priId && !document.querySelector('input[name="priority"]:checked')) {
+        const priEl = document.getElementById(priId);
+        if (priEl) priEl.checked = true;
+      }
+      // Show emergency banner
+      if (result.isEmergency) document.getElementById('emergencyBanner').classList.add('show');
+    }
+
+    document.getElementById('compDesc').addEventListener('input', () => {
+      clearTimeout(mlDebounce);
+      mlDebounce = setTimeout(runML, 400);
+    });
+    document.getElementById('compTitle')?.addEventListener('input', () => {
+      clearTimeout(mlDebounce);
+      mlDebounce = setTimeout(runML, 400);
+    });
+
 
     // ============= LEAFLET MAP INIT =============
     // Default center: India
