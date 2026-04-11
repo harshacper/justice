@@ -16,6 +16,32 @@
     .leaflet-popup-content { color:#f0f0f0; font-size:0.85rem; line-height:1.5; }
     #adminComplaintsMap { height: 500px; border-radius: var(--radius); border: 1px solid var(--border-green); }
     #modalMiniMap { height: 200px; border-radius: var(--radius-sm); border: 1px solid var(--border-green); margin-bottom: 1rem; }
+    /* Complaint Detail Drawer */
+    .drawer-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;backdrop-filter:blur(4px); }
+    .drawer-overlay.show { display:block; }
+    .detail-drawer { position:fixed;right:-100%;top:0;height:100vh;width:min(640px,100vw);background:var(--bg-card);border-left:1px solid var(--border-green);z-index:1001;overflow-y:auto;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column; }
+    .detail-drawer.open { right:0; }
+    .drawer-header { padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-card);z-index:10; }
+    .drawer-body { padding:1.5rem;flex:1; }
+    .drawer-close { background:none;border:none;color:var(--text-primary);font-size:1.4rem;cursor:pointer;padding:4px 8px;border-radius:8px;transition:background 0.2s; }
+    .drawer-close:hover { background:var(--bg-elevated); }
+    .detail-field { margin-bottom:1rem; }
+    .detail-label { font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:0.3rem; }
+    .detail-value { font-size:0.95rem;color:var(--text-primary);line-height:1.5; }
+    .detail-section { border-top:1px solid var(--border);margin-top:1.2rem;padding-top:1.2rem; }
+    .detail-section-title { font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:0.8rem;display:flex;align-items:center;gap:6px; }
+    .timeline-item { display:flex;gap:10px;align-items:flex-start;margin-bottom:0.7rem;font-size:0.82rem; }
+    .timeline-dot { width:8px;height:8px;min-width:8px;border-radius:50%;background:var(--primary);margin-top:5px; }
+    .ml-prediction-block { background:linear-gradient(135deg,rgba(74,222,128,0.08),rgba(74,222,128,0.02));border:1px solid var(--border-green);border-radius:var(--radius-sm);padding:0.8rem 1rem; }
+    /* User profile drawer additions */
+    .login-item { display:flex;gap:10px;padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.82rem; }
+    .login-item:last-child { border-bottom:none; }
+    .stat-mini { text-align:center;background:var(--bg-elevated);border-radius:var(--radius-sm);padding:0.8rem;flex:1; }
+    .stat-mini-val { font-size:1.4rem;font-weight:800;color:var(--primary); }
+    .stat-mini-lbl { font-size:0.72rem;color:var(--text-muted);margin-top:2px; }
+    /* Table action buttons */
+    .view-btn { background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);color:#4ade80;border-radius:8px;padding:4px 10px;font-size:0.78rem;cursor:pointer;transition:all 0.2s; }
+    .view-btn:hover { background:rgba(74,222,128,0.25); }
   </style>
 </head>
 <body>
@@ -77,6 +103,8 @@
           <a href="#" onclick="showSection('incidents')"><i class="fa-solid fa-file-lines"></i> Incident Reports</a>
           <div class="nav-label">Management</div>
           <a href="#" onclick="showSection('users')"><i class="fa-solid fa-users"></i> Manage Users</a>
+          <a href="#" onclick="showSection('userprofiles')"><i class="fa-solid fa-id-card"></i> User Profiles</a>
+          <a href="#" onclick="showSection('loginhistory')"><i class="fa-solid fa-key"></i> Login History</a>
           <a href="#" onclick="showSection('mapview')"><i class="fa-solid fa-map-location-dot"></i> Complaints Map</a>
           <a href="#" onclick="showSection('activity')"><i class="fa-solid fa-clock-rotate-left"></i> Activity Logs</a>
           <div class="nav-label">System</div>
@@ -155,8 +183,8 @@
           <div class="card">
             <div class="table-container">
               <table>
-                <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Joined</th></tr></thead>
-                <tbody id="usersBody"><tr><td colspan="6" class="text-center text-muted">Loading...</td></tr></tbody>
+                <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Complaints</th><th>Joined</th><th>Last Login</th><th>Actions</th></tr></thead>
+                <tbody id="usersBody"><tr><td colspan="8" class="text-center text-muted">Loading...</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -187,9 +215,76 @@
           </div>
         </div>
 
+        <!-- ═══ USER PROFILES ═══ -->
+        <div id="sec-userprofiles" class="dash-section hidden">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h1 style="font-size:1.6rem;margin-bottom:0.2rem;"><i class="fa-solid fa-id-card" style="color:var(--primary)"></i> User Profiles</h1>
+              <p class="text-muted text-sm">Detailed view of all registered citizens with complaint activity and login history</p>
+            </div>
+            <input type="text" id="profileSearch" class="form-control" style="max-width:220px;" placeholder="🔍 Search by name / email…" oninput="filterProfiles(this.value)">
+          </div>
+          <div id="profilesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
+            <div class="text-center text-muted" style="grid-column:1/-1;padding:3rem;">Loading user profiles…</div>
+          </div>
+        </div>
+
+        <!-- ═══ LOGIN HISTORY ═══ -->
+        <div id="sec-loginhistory" class="dash-section hidden">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h1 style="font-size:1.6rem;margin-bottom:0.2rem;"><i class="fa-solid fa-key" style="color:var(--primary)"></i> Login History</h1>
+              <p class="text-muted text-sm">All user login sessions — IP address, browser, and timestamp tracking</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadLoginHistory()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div class="card">
+            <div class="table-container">
+              <table>
+                <thead><tr><th>#</th><th>User</th><th>Email</th><th>Role</th><th>IP Address</th><th>Browser / Device</th><th>Login Time</th></tr></thead>
+                <tbody id="loginHistoryBody"><tr><td colspan="7" class="text-center text-muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
   </div>
+
+  <!-- ════════════════════════════════════════
+       COMPLAINT DETAIL DRAWER
+  ════════════════════════════════════════ -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="detail-drawer" id="complaintDrawer">
+    <div class="drawer-header">
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:2px;">Complaint Detail</div>
+        <div id="drawerComplaintId" style="font-size:1.2rem;font-weight:800;"></div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body" id="drawerBody">
+      <div class="text-center text-muted" style="padding:2rem;">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       USER PROFILE DRAWER
+  ════════════════════════════════════════ -->
+  <div class="detail-drawer" id="userDrawer" style="width:min(560px,100vw);">
+    <div class="drawer-header">
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:2px;">User Profile</div>
+        <div id="userDrawerName" style="font-size:1.2rem;font-weight:800;"></div>
+      </div>
+      <button class="drawer-close" onclick="closeUserDrawer()">✕</button>
+    </div>
+    <div class="drawer-body" id="userDrawerBody">
+      <div class="text-center text-muted" style="padding:2rem;">Loading…</div>
+    </div>
+  </div>
+
 
   <!-- UPDATE STATUS MODAL -->
   <div class="modal-overlay" id="statusModal">
@@ -296,6 +391,8 @@
       if (name === 'emergencies' || name === 'emergency') loadEmergencies();
       if (name === 'users') loadUsers();
       if (name === 'activity') loadActivity();
+      if (name === 'userprofiles') loadUserProfiles();
+      if (name === 'loginhistory') loadLoginHistory();
       if (name === 'mapview') {
         setTimeout(() => {
           loadMapView();
@@ -304,6 +401,7 @@
       }
       return false;
     }
+
 
     async function loadAll() {
       const h = { 'Authorization': `Bearer ${adminToken}` };
@@ -408,11 +506,13 @@
           </td>
           <td>
             <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              <button class="view-btn" onclick="viewComplaintDetail(${c.ComplaintID})"><i class="fa-solid fa-eye"></i> View</button>
               <button class="btn btn-secondary btn-sm" onclick="openUpdate(${c.ComplaintID}, '${c.Status}', '${c.Department||''}', ${JSON.stringify(c.Location||'')})"><i class="fa-solid fa-edit"></i></button>
               ${c.Image ? `<button class="btn btn-secondary btn-sm" onclick="viewImg('${c.Image}')"><i class="fa-solid fa-image"></i></button>` : ''}
               <button class="btn btn-danger btn-sm" onclick="deleteComplaint(${c.ComplaintID})"><i class="fa-solid fa-trash"></i></button>
             </div>
           </td>
+
         </tr>`).join('');
     }
 
@@ -420,16 +520,28 @@
       const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${adminToken}` } });
       const data = await res.json();
       const tbody = document.getElementById('usersBody');
-      tbody.innerHTML = data.map(u => `
-        <tr>
-          <td><strong>${u.UserID}</strong></td>
-          <td><strong>${u.Name}</strong></td>
-          <td>${u.Email}</td>
-          <td>${u.Phone||'—'}</td>
-          <td class="text-muted text-sm">${u.Address||'—'}</td>
-          <td class="text-muted text-sm">${u.CreatedAt ? new Date(u.CreatedAt).toLocaleDateString() : '—'}</td>
-        </tr>`).join('');
+      if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="padding:2rem;">No registered users yet.</td></tr>'; return; }
+      tbody.innerHTML = data.map(u => {
+        const uid = u.UserID||u.userid;
+        const lastLogin = u.lastLogin||u.lastlogin;
+        const total = u.totalComplaints||u.totalcomplaints||0;
+        const resolved = u.resolvedComplaints||u.resolvedcomplaints||0;
+        return `<tr>
+          <td><strong style="color:var(--primary)">#${uid}</strong></td>
+          <td><strong>${u.Name||u.name||'—'}</strong></td>
+          <td style="font-size:0.83rem;">${u.Email||u.email||'—'}</td>
+          <td>${u.Phone||u.phone||'—'}</td>
+          <td>
+            <span style="color:var(--primary);font-weight:700;">${total}</span> total /
+            <span style="color:#4ade80;">${resolved}</span> resolved
+          </td>
+          <td style="font-size:0.78rem;color:var(--text-muted);">${u.CreatedAt||u.createdat ? new Date(u.CreatedAt||u.createdat).toLocaleDateString() : '—'}</td>
+          <td style="font-size:0.78rem;color:var(--text-muted);">${lastLogin ? new Date(lastLogin).toLocaleString() : '<span style="color:#f87171;">Never</span>'}</td>
+          <td><button class="view-btn" onclick="openUserProfile(${uid})"><i class="fa-solid fa-id-card"></i> Profile</button></td>
+        </tr>`;
+      }).join('');
     }
+
 
     async function exportCSV() {
       try {
@@ -449,9 +561,349 @@
       const data = await res.json();
       const iconMap = { LOGIN:'fa-right-to-bracket', REGISTER:'fa-user-plus', COMPLAINT_SUBMIT:'fa-file-circle-plus', STATUS_UPDATE:'fa-rotate', ADMIN_LOGIN:'fa-user-shield', ADMIN_RESPONSE:'fa-message', DELETE:'fa-trash', SOS:'fa-triangle-exclamation' };
       document.getElementById('activityLog').innerHTML = data.map(log => {
-        const icon = iconMap[log.Action] || 'fa-circle';
-        return `<div class="log-item"><div class="log-icon"><i class="fa-solid ${icon}"></i></div><div class="log-text"><strong>${log.Action.replace(/_/g,' ')}</strong><span>${log.Details} · ${new Date(log.Timestamp).toLocaleString()}</span></div></div>`;
+        const icon = iconMap[log.Action||log.action] || 'fa-circle';
+        const ts = log.Timestamp||log.timestamp;
+        return `<div class="log-item"><div class="log-icon"><i class="fa-solid ${icon}"></i></div><div class="log-text"><strong>${(log.Action||log.action||'').replace(/_/g,' ')}</strong><span>${log.Details||log.details||''} · ${ts ? new Date(ts).toLocaleString() : ''}</span></div></div>`;
       }).join('') || '<div class="text-center text-muted">No activity logs yet.</div>';
+    }
+
+    // ════════════════════════════════════════
+    //  COMPLAINT DETAIL DRAWER
+    // ════════════════════════════════════════
+    const h = () => ({ 'Authorization': `Bearer ${adminToken}` });
+
+    async function viewComplaintDetail(id) {
+      // Open drawer immediately with spinner
+      document.getElementById('drawerComplaintId').textContent = `#${String(id).padStart(4,'0')}`;
+      document.getElementById('drawerBody').innerHTML = '<div class="text-center text-muted" style="padding:3rem;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+      document.getElementById('complaintDrawer').classList.add('open');
+      document.getElementById('drawerOverlay').classList.add('show');
+
+      try {
+        const res = await fetch(`/api/admin/complaints/${id}`, { headers: h() });
+        const c = await res.json();
+        if (c.error) { document.getElementById('drawerBody').innerHTML = `<p style="color:red">${c.error}</p>`; return; }
+
+        // ML live analysis
+        const mlRes = window.MLEngine ? MLEngine.analyzeText(`${c.Title||c.title||''} ${c.Description||c.description||''}`, c.Category||c.category) : null;
+        const pb = mlRes ? MLEngine.priorityBadge(mlRes.priority) : null;
+        const sb = mlRes ? MLEngine.sentimentBadge(mlRes.sentiment) : null;
+
+        const isEmergency = c.IsEmergency || c.isemergency;
+        const img = c.Image || c.image;
+        const loc = c.Location || c.location;
+        const ts = c.Timestamp || c.timestamp;
+        const status = c.Status || c.status || 'Pending';
+        const priority = c.Priority || c.priority || 'Medium';
+        const statusColors = { Pending:'#fbbf24', 'In Progress':'#60a5fa', Resolved:'#4ade80', Rejected:'#f87171' };
+        const prioColors = { Emergency:'#ff4444', High:'#fb923c', Medium:'#fbbf24', Low:'#4ade80' };
+        const logs = c.activityLogs || [];
+
+        document.getElementById('drawerBody').innerHTML = `
+          <!-- Status bar -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.2rem;">
+            ${isEmergency ? '<span style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;border-radius:20px;padding:3px 12px;font-size:0.78rem;font-weight:700;">🚨 EMERGENCY</span>' : ''}
+            <span style="background:${(statusColors[status]||'#ccc')}22;color:${statusColors[status]||'#ccc'};border:1px solid ${statusColors[status]||'#ccc'}44;border-radius:20px;padding:3px 12px;font-size:0.78rem;font-weight:700;">${status}</span>
+            <span style="background:${(prioColors[priority]||'#ccc')}22;color:${prioColors[priority]||'#ccc'};border:1px solid ${prioColors[priority]||'#ccc'}44;border-radius:20px;padding:3px 12px;font-size:0.78rem;font-weight:700;">${priority} Priority</span>
+          </div>
+
+          <!-- Title & meta -->
+          <div class="detail-field">
+            <div class="detail-label">Title</div>
+            <div class="detail-value" style="font-size:1.1rem;font-weight:700;">${c.Title||c.title||'—'}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+            <div class="detail-field" style="margin:0">
+              <div class="detail-label">Category</div>
+              <div class="detail-value">${c.Category||c.category||'—'}</div>
+            </div>
+            <div class="detail-field" style="margin:0">
+              <div class="detail-label">Department</div>
+              <div class="detail-value">${c.Department||c.department||'—'}</div>
+            </div>
+            <div class="detail-field" style="margin:0">
+              <div class="detail-label">Date Filed</div>
+              <div class="detail-value">${c.Date||c.date||'—'}</div>
+            </div>
+            <div class="detail-field" style="margin:0">
+              <div class="detail-label">Assigned To</div>
+              <div class="detail-value">${c.AssignedTo||c.assignedto||'—'}</div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="detail-field">
+            <div class="detail-label">Full Description</div>
+            <div class="detail-value" style="background:var(--bg-elevated);border-radius:8px;padding:0.8rem;line-height:1.7;">${(c.Description||c.description||'No description provided.').replace(/\n/g,'<br>')}</div>
+          </div>
+
+          <!-- Location -->
+          <div class="detail-field">
+            <div class="detail-label"><i class="fa-solid fa-location-dot" style="color:var(--primary)"></i> Location</div>
+            <div class="detail-value">${loc||'Location not provided'}</div>
+          </div>
+
+          <!-- Image Evidence -->
+          ${img ? `
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-camera"></i> Evidence / Photo</div>
+            <img src="${img}" onclick="viewImg('${img}')" style="max-width:100%;border-radius:10px;cursor:pointer;border:1px solid var(--border-green);transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <p class="text-muted text-sm mt-1">Click image to enlarge</p>
+          </div>` : ''}
+
+          <!-- ML AI Analysis -->
+          ${mlRes ? `
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-brain"></i> AI / ML Analysis</div>
+            <div class="ml-prediction-block">
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0.6rem;">
+                <span style="background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:16px;padding:3px 10px;font-size:0.78rem;font-weight:700;"><i class="fa-solid fa-brain" style="font-size:0.65rem"></i> ${mlRes.category}</span>
+                <span style="background:${pb.bg};color:${pb.color};border:1px solid ${pb.color}40;border-radius:16px;padding:3px 10px;font-size:0.78rem;font-weight:700;">${pb.icon} ${mlRes.priority} Priority</span>
+                <span style="background:${sb.bg};color:${sb.color};border:1px solid ${sb.color}40;border-radius:16px;padding:3px 10px;font-size:0.78rem;font-weight:700;">${sb.icon} ${mlRes.sentiment} Sentiment</span>
+              </div>
+              <div style="font-size:0.78rem;color:var(--text-muted);display:flex;align-items:center;gap:8px;">
+                <span>AI Confidence: <strong style="color:var(--primary)">${mlRes.confidence}%</strong></span>
+                <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="width:${mlRes.confidence}%;height:100%;background:var(--primary);border-radius:2px;"></div></div>
+              </div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.4rem;"><i class="fa-solid fa-building-columns" style="color:var(--primary)"></i> Suggested Department: <strong>${mlRes.department}</strong></div>
+            </div>
+          </div>` : ''}
+
+          <!-- Admin Response -->
+          ${c.AdminResponse||c.adminresponse ? `
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-reply"></i> Official Admin Response</div>
+            <div style="background:rgba(74,222,128,0.06);border:1px solid var(--border-green);border-radius:8px;padding:0.8rem;font-size:0.9rem;line-height:1.7;">
+              ${(c.AdminResponse||c.adminresponse).replace(/\n/g,'<br>')}
+            </div>
+          </div>` : ''}
+
+          <!-- Citizen Info -->
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-user"></i> Filed By (Citizen)</div>
+            <div style="background:var(--bg-elevated);border-radius:10px;padding:1rem;display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
+              <div><div class="detail-label">Name</div><div class="detail-value">${c.UserName||c.username||'Anonymous'}</div></div>
+              <div><div class="detail-label">Phone</div><div class="detail-value">${c.UserPhone||c.userphone||'—'}</div></div>
+              <div><div class="detail-label">Email</div><div class="detail-value" style="font-size:0.85rem;">${c.UserEmail||c.useremail||'—'}</div></div>
+              <div><div class="detail-label">Address</div><div class="detail-value" style="font-size:0.85rem;">${c.UserAddress||c.useraddress||'—'}</div></div>
+              <div style="grid-column:1/-1"><div class="detail-label">Total Complaints by this user</div><div class="detail-value"><strong style="color:var(--primary)">${c.userComplaintCount||0}</strong></div></div>
+            </div>
+          </div>
+
+          <!-- Activity Timeline -->
+          ${logs.length ? `
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-timeline"></i> Activity Timeline</div>
+            ${logs.map(l=>`
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div>
+                  <strong style="font-size:0.82rem;">${(l.Action||l.action||'').replace(/_/g,' ')}</strong>
+                  <div style="color:var(--text-muted);font-size:0.78rem;">${l.Details||l.details||''}</div>
+                  <div style="color:var(--text-muted);font-size:0.72rem;">${l.Timestamp||l.timestamp ? new Date(l.Timestamp||l.timestamp).toLocaleString() : ''}</div>
+                </div>
+              </div>`).join('')}
+          </div>` : ''}
+
+          <!-- Actions -->
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-gear"></i> Actions</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="closeDrawer(); openUpdate(${c.ComplaintID||c.complaintid},'${status}','${c.Department||c.department||''}',${JSON.stringify(loc||'')})">
+                <i class="fa-solid fa-edit"></i> Update Status
+              </button>
+              ${img ? `<button class="btn btn-secondary btn-sm" onclick="viewImg('${img}')"><i class="fa-solid fa-image"></i> View Evidence</button>` : ''}
+              <button class="btn btn-danger btn-sm" onclick="closeDrawer(); deleteComplaint(${c.ComplaintID||c.complaintid})">
+                <i class="fa-solid fa-trash"></i> Delete
+              </button>
+            </div>
+          </div>
+        `;
+      } catch(err) {
+        document.getElementById('drawerBody').innerHTML = `<p style="color:red">Error loading complaint details: ${err.message}</p>`;
+      }
+    }
+
+    function closeDrawer() {
+      document.getElementById('complaintDrawer').classList.remove('open');
+      document.getElementById('drawerOverlay').classList.remove('show');
+    }
+
+    // ════════════════════════════════════════
+    //  USER PROFILES
+    // ════════════════════════════════════════
+    let _allProfiles = [];
+
+    async function loadUserProfiles() {
+      document.getElementById('profilesGrid').innerHTML = '<div class="text-center text-muted" style="grid-column:1/-1;padding:3rem;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+      try {
+        const res = await fetch('/api/admin/users', { headers: h() });
+        _allProfiles = await res.json();
+        renderProfiles(_allProfiles);
+      } catch(e) {
+        document.getElementById('profilesGrid').innerHTML = `<div class="text-center text-muted" style="grid-column:1/-1;">Error: ${e.message}</div>`;
+      }
+    }
+
+    function renderProfiles(list) {
+      if (!list.length) { document.getElementById('profilesGrid').innerHTML = '<div class="text-center text-muted" style="grid-column:1/-1;padding:2rem;">No users found.</div>'; return; }
+      document.getElementById('profilesGrid').innerHTML = list.map(u => {
+        const uid = u.UserID||u.userid;
+        const joined = u.CreatedAt||u.createdat;
+        const lastLogin = u.lastLogin||u.lastlogin;
+        const total = u.totalComplaints||u.totalcomplaints||0;
+        const resolved = u.resolvedComplaints||u.resolvedcomplaints||0;
+        const initials = (u.Name||u.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+        return `
+        <div class="card" style="cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(74,222,128,0.15)'" onmouseout="this.style.transform='none';this.style.boxShadow=''" onclick="openUserProfile(${uid})">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
+            <div style="width:48px;height:48px;min-width:48px;border-radius:50%;background:linear-gradient(135deg,var(--primary-dark),var(--primary));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:#fff;">${initials}</div>
+            <div style="flex:1;overflow:hidden;">
+              <div style="font-weight:700;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.Name||u.name||'Unknown'}</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.Email||u.email||'—'}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:1rem;">
+            <div class="stat-mini"><div class="stat-mini-val" style="font-size:1.2rem;">${total}</div><div class="stat-mini-lbl">Complaints</div></div>
+            <div class="stat-mini"><div class="stat-mini-val" style="font-size:1.2rem;color:#4ade80;">${resolved}</div><div class="stat-mini-lbl">Resolved</div></div>
+            <div class="stat-mini"><div class="stat-mini-val" style="font-size:1.2rem;color:#fb923c;">${total-resolved}</div><div class="stat-mini-lbl">Pending</div></div>
+          </div>
+          <div style="font-size:0.75rem;color:var(--text-muted);display:flex;flex-direction:column;gap:3px;">
+            <span><i class="fa-solid fa-phone" style="color:var(--primary);width:14px"></i> ${u.Phone||u.phone||'—'}</span>
+            <span><i class="fa-solid fa-calendar" style="color:var(--primary);width:14px"></i> Joined: ${joined ? new Date(joined).toLocaleDateString() : '—'}</span>
+            <span><i class="fa-solid fa-clock" style="color:var(--primary);width:14px"></i> Last Login: ${lastLogin ? new Date(lastLogin).toLocaleString() : 'Never'}</span>
+            ${u.lastIP||u.lastip ? `<span><i class="fa-solid fa-network-wired" style="color:var(--primary);width:14px"></i> IP: ${u.lastIP||u.lastip}</span>` : ''}
+          </div>
+          <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border);display:flex;gap:6px;">
+            <button class="view-btn" onclick="event.stopPropagation();openUserProfile(${uid})"><i class="fa-solid fa-eye"></i> Full Profile</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function filterProfiles(q) {
+      if (!q) { renderProfiles(_allProfiles); return; }
+      const lq = q.toLowerCase();
+      renderProfiles(_allProfiles.filter(u =>
+        (u.Name||u.name||'').toLowerCase().includes(lq) ||
+        (u.Email||u.email||'').toLowerCase().includes(lq) ||
+        (u.Phone||u.phone||'').includes(q)
+      ));
+    }
+
+    async function openUserProfile(uid) {
+      document.getElementById('userDrawerName').textContent = 'Loading…';
+      document.getElementById('userDrawerBody').innerHTML = '<div class="text-center text-muted" style="padding:3rem;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+      document.getElementById('userDrawer').classList.add('open');
+      document.getElementById('drawerOverlay').classList.add('show');
+      try {
+        const res = await fetch(`/api/admin/users/${uid}`, { headers: h() });
+        const u = await res.json();
+        if (u.error) { document.getElementById('userDrawerBody').innerHTML = `<p style="color:red">${u.error}</p>`; return; }
+        const name = u.Name||u.name||'Unknown';
+        const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+        document.getElementById('userDrawerName').textContent = name;
+        const complaints = u.complaints||[];
+        const logins = u.loginHistory||u.loginhistory||[];
+        document.getElementById('userDrawerBody').innerHTML = `
+          <!-- Avatar + Info -->
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;">
+            <div style="width:64px;height:64px;min-width:64px;border-radius:50%;background:linear-gradient(135deg,var(--primary-dark),var(--primary));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;color:#fff;">${initials}</div>
+            <div>
+              <div style="font-size:1.15rem;font-weight:800;">${name}</div>
+              <div style="font-size:0.82rem;color:var(--text-muted);">${u.Email||u.email||'—'}</div>
+              <div style="font-size:0.82rem;color:var(--text-muted);">📞 ${u.Phone||u.phone||'—'}</div>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div style="display:flex;gap:8px;margin-bottom:1.5rem;">
+            <div class="stat-mini"><div class="stat-mini-val">${complaints.length}</div><div class="stat-mini-lbl">Complaints</div></div>
+            <div class="stat-mini"><div class="stat-mini-val" style="color:#4ade80;">${complaints.filter(c=>(c.Status||c.status)==='Resolved').length}</div><div class="stat-mini-lbl">Resolved</div></div>
+            <div class="stat-mini"><div class="stat-mini-val" style="color:#f87171;">${complaints.filter(c=>(c.Status||c.status)==='Pending').length}</div><div class="stat-mini-lbl">Pending</div></div>
+            <div class="stat-mini"><div class="stat-mini-val" style="color:#fb923c;">${logins.length}</div><div class="stat-mini-lbl">Logins</div></div>
+          </div>
+
+          <!-- Details -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:1.2rem;">
+            <div><div class="detail-label">User ID</div><div class="detail-value">#${u.UserID||u.userid}</div></div>
+            <div><div class="detail-label">Joined</div><div class="detail-value">${u.CreatedAt||u.createdat ? new Date(u.CreatedAt||u.createdat).toLocaleDateString() : '—'}</div></div>
+            <div style="grid-column:1/-1"><div class="detail-label">Address</div><div class="detail-value">${u.Address||u.address||'—'}</div></div>
+          </div>
+
+          <!-- Complaint History -->
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-file-lines"></i> Complaint History (${complaints.length})</div>
+            ${complaints.length ? `
+            <div style="max-height:250px;overflow-y:auto;">
+              ${complaints.map(c=>{
+                const st = c.Status||c.status||'Pending';
+                const stc = {Pending:'#fbbf24','In Progress':'#60a5fa',Resolved:'#4ade80',Rejected:'#f87171'}[st]||'#ccc';
+                return `<div style="display:flex;align-items:center;gap:8px;padding:0.5rem 0;border-bottom:1px solid var(--border);">
+                  <span style="font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;background:${stc}22;color:${stc};border:1px solid ${stc}44;white-space:nowrap;">${st}</span>
+                  <div style="flex:1;overflow:hidden;">
+                    <div style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:var(--primary);" onclick="closeUserDrawer();viewComplaintDetail(${c.ComplaintID||c.complaintid})">#${String(c.ComplaintID||c.complaintid).padStart(4,'0')} ${c.Title||c.title||'—'}</div>
+                    <div style="font-size:0.72rem;color:var(--text-muted);">${c.Category||c.category||'—'} · ${c.Date||c.date||''}</div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>` : '<div class="text-muted text-sm">No complaints filed.</div>'}
+          </div>
+
+          <!-- Login History -->
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-key"></i> Login Sessions (${logins.length})</div>
+            ${logins.length ? `
+            <div style="max-height:220px;overflow-y:auto;">
+              ${logins.map(l=>`
+                <div class="login-item">
+                  <div style="width:32px;height:32px;min-width:32px;border-radius:50%;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;font-size:0.9rem;">🔑</div>
+                  <div>
+                    <div style="font-size:0.82rem;font-weight:600;">${l.LoginAt||l.loginat ? new Date(l.LoginAt||l.loginat).toLocaleString() : '—'}</div>
+                    <div style="font-size:0.72rem;color:var(--text-muted);">IP: ${l.IPAddress||l.ipaddress||'Unknown'}</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(l.UserAgent||l.useragent||'').slice(0,80)}</div>
+                  </div>
+                </div>`).join('')}
+            </div>` : '<div class="text-muted text-sm">No login history available.</div>'}
+          </div>
+        `;
+      } catch(err) {
+        document.getElementById('userDrawerBody').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+      }
+    }
+
+    function closeUserDrawer() {
+      document.getElementById('userDrawer').classList.remove('open');
+      document.getElementById('drawerOverlay').classList.remove('show');
+    }
+
+    // ════════════════════════════════════════
+    //  LOGIN HISTORY TABLE
+    // ════════════════════════════════════════
+    async function loadLoginHistory() {
+      document.getElementById('loginHistoryBody').innerHTML = '<tr><td colspan="7" class="text-center text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</td></tr>';
+      try {
+        const res = await fetch('/api/admin/login-history', { headers: h() });
+        const rows = await res.json();
+        if (!rows.length) { document.getElementById('loginHistoryBody').innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">No login records yet.</td></tr>'; return; }
+        document.getElementById('loginHistoryBody').innerHTML = rows.map((r,i) => {
+          const ua = r.UserAgent||r.useragent||'';
+          const browser = ua.includes('Chrome') ? '🌐 Chrome' : ua.includes('Firefox') ? '🦊 Firefox' : ua.includes('Safari') ? '🧭 Safari' : ua.includes('Edge') ? '🔵 Edge' : '📱 Unknown';
+          const device = ua.toLowerCase().includes('mobile') ? ' · Mobile' : ua.toLowerCase().includes('tablet') ? ' · Tablet' : ' · Desktop';
+          const ts = r.LoginAt||r.loginat;
+          return `<tr>
+            <td><strong style="color:var(--primary)">${i+1}</strong></td>
+            <td><strong>${r.UserName||r.username||'Unknown'}</strong></td>
+            <td style="font-size:0.82rem;">${r.Email||r.email||'—'}</td>
+            <td><span style="background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:10px;padding:2px 8px;font-size:0.72rem;font-weight:700;">${r.Role||r.role||'user'}</span></td>
+            <td style="font-size:0.82rem;font-family:monospace;">${r.IPAddress||r.ipaddress||'—'}</td>
+            <td style="font-size:0.78rem;color:var(--text-muted);">${browser}${device}</td>
+            <td style="font-size:0.78rem;color:var(--text-muted);">${ts ? new Date(ts).toLocaleString() : '—'}</td>
+          </tr>`;
+        }).join('');
+      } catch(err) {
+        document.getElementById('loginHistoryBody').innerHTML = `<tr><td colspan="7" class="text-center" style="color:red;">Error: ${err.message}</td></tr>`;
+      }
     }
 
     // ============= MAP HELPERS =============

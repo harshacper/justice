@@ -154,6 +154,17 @@ async function initPostgres() {
             Timestamp TIMESTAMP DEFAULT NOW()
         )
     `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS LoginHistory (
+            LoginID   SERIAL PRIMARY KEY,
+            UserID    INTEGER,
+            Email     TEXT,
+            Role      TEXT DEFAULT 'user',
+            IPAddress TEXT,
+            UserAgent TEXT,
+            LoginAt   TIMESTAMP DEFAULT NOW()
+        )
+    `);
 
     // Seed admin accounts
     for (const [name, pass] of [['harsha123','harsha1432'],['admin','admin123']]) {
@@ -188,6 +199,7 @@ async function initSQLite() {
         sqlDb.run(`CREATE TABLE IF NOT EXISTS Admin (AdminID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT UNIQUE, Password TEXT, Role TEXT DEFAULT 'admin')`);
         sqlDb.run(`CREATE TABLE IF NOT EXISTS Complaints (ComplaintID INTEGER PRIMARY KEY AUTOINCREMENT, UserID INTEGER, Title TEXT, Description TEXT, Category TEXT, Priority TEXT DEFAULT 'Medium', Image TEXT, Location TEXT, Date TEXT, Status TEXT DEFAULT 'Pending', Department TEXT DEFAULT 'General', AdminResponse TEXT, AssignedTo TEXT, IsEmergency INTEGER DEFAULT 0, MLCategory TEXT, MLPriority TEXT, MLSentiment TEXT, MLConfidence INTEGER DEFAULT 0, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(UserID) REFERENCES Users(UserID))`);
         sqlDb.run(`CREATE TABLE IF NOT EXISTS ActivityLogs (LogID INTEGER PRIMARY KEY AUTOINCREMENT, Action TEXT, UserID INTEGER, Details TEXT, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+        sqlDb.run(`CREATE TABLE IF NOT EXISTS LoginHistory (LoginID INTEGER PRIMARY KEY AUTOINCREMENT, UserID INTEGER, Email TEXT, Role TEXT DEFAULT 'user', IPAddress TEXT, UserAgent TEXT, LoginAt DATETIME DEFAULT CURRENT_TIMESTAMP)`);
         // Migration: add columns if missing
         ['Department TEXT DEFAULT "General"','AdminResponse TEXT','AssignedTo TEXT','IsEmergency INTEGER DEFAULT 0','MLCategory TEXT','MLPriority TEXT','MLSentiment TEXT','MLConfidence INTEGER DEFAULT 0'].forEach(c => sqlDb.run(`ALTER TABLE Complaints ADD COLUMN ${c}`, () => {}));
         res();
@@ -235,13 +247,19 @@ app.post('/api/login', async (req, res) => {
         if (!user) return res.status(400).json({ error: 'No account found with this email.' });
         if (!await bcrypt.compare(password, user.Password)) return res.status(400).json({ error: 'Incorrect password.' });
         const token = jwt.sign({ userId: user.UserID, name: user.Name, email: user.Email, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
-        await logActivity('LOGIN', user.UserID, `Login: ${email}`);
+        // Log full session info
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || 'Unknown';
+        const ua = req.headers['user-agent'] || 'Unknown';
+        await logActivity('LOGIN', user.UserID, `Login: ${email} from ${ip}`);
+        await db.run('INSERT INTO LoginHistory (UserID,Email,Role,IPAddress,UserAgent) VALUES (?,?,?,?,?)',
+            [user.UserID, email.toLowerCase().trim(), 'user', ip, ua]).catch(()=>{});
         res.json({ message: 'Login successful!', token, userId: user.UserID, name: user.Name, role: 'user' });
     } catch(err) {
         console.error('[Login]', err.message);
         res.status(500).json({ error: 'Server error.' });
     }
 });
+
 
 // ======================== COMPLAINT ROUTES ========================
 app.post('/api/complaints', authMiddleware, upload.single('image'), async (req, res) => {
@@ -352,9 +370,56 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
 });
 
 app.get('/api/admin/activity', adminMiddleware, async (req, res) => {
-    try { res.json(await db.all('SELECT * FROM ActivityLogs ORDER BY LogID DESC LIMIT 100') || []); }
+    try { res.json(await db.all('SELECT * FROM ActivityLogs ORDER BY LogID DESC LIMIT 200') || []); }
     catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+// ── Full complaint detail (single) ──
+app.get('/api/admin/complaints/:id', adminMiddleware, async (req, res) => {
+    try {
+        const c = await db.get(`SELECT c.*, u.Name as UserName, u.Phone as UserPhone, u.Email as UserEmail, u.Address as UserAddress, u.CreatedAt as UserJoined FROM Complaints c LEFT JOIN Users u ON c.UserID=u.UserID WHERE c.ComplaintID=?`, [req.params.id]);
+        if (!c) return res.status(404).json({ error: 'Complaint not found.' });
+        // Get activity for this complaint
+        const logs = await db.all(`SELECT * FROM ActivityLogs WHERE Details LIKE ? ORDER BY Timestamp ASC LIMIT 20`, [`%#${req.params.id}%`]);
+        // Complaint count for same user
+        const userStats = c.UserID ? await db.get('SELECT COUNT(*) as total FROM Complaints WHERE UserID=?', [c.UserID]) : null;
+        res.json({ ...c, activityLogs: logs, userComplaintCount: userStats?.total || 0 });
+    } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Users list with complaint counts & last login ──
+app.get('/api/admin/users', adminMiddleware, async (req, res) => {
+    try {
+        const users = await db.all('SELECT UserID,Name,Phone,Email,Address,CreatedAt FROM Users ORDER BY UserID DESC') || [];
+        // Attach complaint count + last login for each user
+        const enriched = await Promise.all(users.map(async u => {
+            const stats = await db.get('SELECT COUNT(*) as total, SUM(CASE WHEN Status=\'Resolved\' THEN 1 ELSE 0 END) as resolved FROM Complaints WHERE UserID=?', [u.UserID || u.userid]);
+            const lastLogin = await db.get('SELECT LoginAt,IPAddress,UserAgent FROM LoginHistory WHERE UserID=? ORDER BY LoginAt DESC LIMIT 1', [u.UserID || u.userid]).catch(()=>null);
+            return { ...u, totalComplaints: stats?.total||0, resolvedComplaints: stats?.resolved||0, lastLogin: lastLogin?.LoginAt||null, lastIP: lastLogin?.IPAddress||null, lastUA: lastLogin?.UserAgent||null };
+        }));
+        res.json(enriched);
+    } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Full user profile (complaints + login history) ──
+app.get('/api/admin/users/:id', adminMiddleware, async (req, res) => {
+    try {
+        const user = await db.get('SELECT UserID,Name,Phone,Email,Address,CreatedAt FROM Users WHERE UserID=?', [req.params.id]);
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+        const complaints = await db.all('SELECT ComplaintID,Title,Category,Priority,Status,Date,Location,Timestamp FROM Complaints WHERE UserID=? ORDER BY ComplaintID DESC', [req.params.id]);
+        const logins = await db.all('SELECT LoginID,IPAddress,UserAgent,LoginAt FROM LoginHistory WHERE UserID=? ORDER BY LoginAt DESC LIMIT 50', [req.params.id]).catch(()=>[]);
+        res.json({ ...user, complaints, loginHistory: logins, totalComplaints: complaints.length });
+    } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── All login history (admin view) ──
+app.get('/api/admin/login-history', adminMiddleware, async (req, res) => {
+    try {
+        const rows = await db.all(`SELECT l.*, u.Name as UserName FROM LoginHistory l LEFT JOIN Users u ON l.UserID=u.UserID ORDER BY l.LoginAt DESC LIMIT 200`).catch(()=>[]);
+        res.json(rows || []);
+    } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 
 // ======================== SOS ROUTE ========================
 app.post('/api/help', async (req, res) => {
